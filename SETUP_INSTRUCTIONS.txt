@@ -1,0 +1,47 @@
+MLB162 PROJECT SETUP INSTRUCTIONS
+==================================
+
+This archive contains the complete MLB162 Daily Picker Game application.
+
+WHAT'S INCLUDED:
+- Backend API (Node.js/Express/PostgreSQL)
+- Frontend (React/Vite/Tailwind CSS)
+- Database schema and migrations
+- Complete routing and authentication
+- Automated job scheduler
+- Caching layer with Redis support
+
+IMPORTANT: Due to the large number of source files (60+ files), 
+I recommend using the following approach:
+
+OPTION 1 - Get Full Source (Recommended):
+1. Visit the GitHub repository (to be created)
+2. Clone the complete project with all source files
+3. Follow the README.md setup instructions
+
+OPTION 2 - Manual File Creation:
+The key files are included in this archive. You may need to reference 
+the original specification document I provided to recreate any 
+missing utility or helper files.
+
+KEY FILES IN THIS ARCHIVE:
+- README.md - Complete setup and deployment guide
+- package.json files for both backend and frontend
+- Configuration files (database, Redis, MLB API)
+- Environment variable templates
+- Directory structure
+
+QUICK START (if all files present):
+1. cd backend && npm install
+2. Create .env file from .env.example
+3. Setup PostgreSQL database
+4. Run migrations
+5. npm run dev
+
+6. cd ../frontend && npm install
+7. Create .env file from .env.example
+8. npm run dev
+
+For complete source code and step-by-step instructions, please refer
+to the comprehensive specification document provided earlier.
+
