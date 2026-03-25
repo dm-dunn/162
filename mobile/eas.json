@@ -15,7 +15,7 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.mlb162.app/api",
+        "EXPO_PUBLIC_API_URL": "https://one62.onrender.com",
         "EXPO_PUBLIC_USE_MOCK": "false"
       }
     },

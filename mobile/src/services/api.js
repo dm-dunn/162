@@ -1,6 +1,6 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { tokenStorage } from './tokenStorage';
 
 const getApiUrl = () => {
   // Env var set in eas.json per build profile (takes priority in all builds)
@@ -48,7 +48,7 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('accessToken');
+    const token = await tokenStorage.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -81,18 +81,17 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        const refreshToken = await tokenStorage.getRefreshToken();
         const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
         const { accessToken } = response.data;
-        await AsyncStorage.setItem('accessToken', accessToken);
+        await tokenStorage.setAccessToken(accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         processQueue(null, accessToken);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        await AsyncStorage.removeItem('accessToken');
-        await AsyncStorage.removeItem('refreshToken');
+        await tokenStorage.clearTokens();
         if (logoutCallback) logoutCallback();
         return Promise.reject(refreshError);
       } finally {

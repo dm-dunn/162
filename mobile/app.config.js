@@ -49,7 +49,7 @@ export default {
     web: {
       favicon: './assets/favicon.png',
     },
-    plugins: ['expo-asset', 'expo-font', 'expo-updates'],
+    plugins: ['expo-asset', 'expo-font', 'expo-updates', 'expo-secure-store'],
     extra: {
       eas: {
         projectId: '2a00edff-02e7-4951-b32d-bd352bd4885c',

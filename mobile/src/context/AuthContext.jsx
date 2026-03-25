@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/auth';
+import { tokenStorage } from '../services/tokenStorage';
 import { setLogoutCallback } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -17,14 +17,13 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
+      const token = await tokenStorage.getAccessToken();
       if (token) {
         const userData = await authService.getCurrentUser();
         setUser(userData);
       }
     } catch (error) {
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
+      await tokenStorage.clearTokens();
     } finally {
       setLoading(false);
     }
@@ -33,20 +32,25 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     const data = await authService.login(username, password);
     setUser(data.user);
-    await AsyncStorage.setItem('accessToken', data.accessToken);
-    await AsyncStorage.setItem('refreshToken', data.refreshToken);
+    await tokenStorage.setAccessToken(data.accessToken);
+    await tokenStorage.setRefreshToken(data.refreshToken);
   };
 
   const register = async (username, email, password, color) => {
     const data = await authService.register(username, email, password, color);
     setUser(data.user);
-    await AsyncStorage.setItem('accessToken', data.accessToken);
-    await AsyncStorage.setItem('refreshToken', data.refreshToken);
+    await tokenStorage.setAccessToken(data.accessToken);
+    await tokenStorage.setRefreshToken(data.refreshToken);
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('refreshToken');
+    const refreshToken = await tokenStorage.getRefreshToken();
+    try {
+      await authService.logout(refreshToken);
+    } catch (_) {
+      // Best-effort server-side logout
+    }
+    await tokenStorage.clearTokens();
     setUser(null);
   };
 
@@ -55,7 +59,7 @@ export function AuthProvider({ children }) {
       const userData = await authService.getCurrentUser();
       setUser(userData);
     } catch (error) {
-      console.error('Failed to refresh user:', error);
+      // Silently fail — user will need to re-login if refresh fails
     }
   };
 

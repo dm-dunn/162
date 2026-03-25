@@ -37,7 +37,7 @@ export default function LeaguesScreen({ navigation }) {
       setShowCreate(false);
       refetch();
     } catch (err) {
-      console.error('League creation error:', err);
+      // Error handled below via UI state
       if (err.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
         setEmailNotVerified(true);
         setShowCreate(false);

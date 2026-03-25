@@ -6,34 +6,24 @@ import {
 import { authService } from '../../services/auth';
 
 export default function ForgotPasswordScreen({ navigation }) {
-  const [usernameOrEmail, setUsernameOrEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [sent, setSent] = useState(false);
 
-  const handleReset = async () => {
-    if (!usernameOrEmail || !newPassword || !confirmPassword) {
-      setError('Please fill in all fields');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
+  const handleSubmit = async () => {
+    if (!email) {
+      setError('Please enter your email address');
       return;
     }
 
     setError('');
     setLoading(true);
     try {
-      await authService.resetPassword(usernameOrEmail, newPassword);
-      setSuccess(true);
+      await authService.forgotPassword(email);
+      setSent(true);
     } catch (err) {
-      setError(err.response?.data?.error || 'Reset failed. Check your username or email.');
+      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -55,11 +45,13 @@ export default function ForgotPasswordScreen({ navigation }) {
 
         {/* Card */}
         <View style={styles.card}>
-          {success ? (
+          {sent ? (
             <>
-              <Text style={styles.title}>Password Updated</Text>
+              <Text style={styles.title}>Check Your Email</Text>
               <View style={styles.successBox}>
-                <Text style={styles.successText}>Your password has been reset successfully.</Text>
+                <Text style={styles.successText}>
+                  If an account with that email exists, a password reset link has been sent. Check your inbox.
+                </Text>
               </View>
               <TouchableOpacity
                 style={styles.btn}
@@ -72,7 +64,9 @@ export default function ForgotPasswordScreen({ navigation }) {
           ) : (
             <>
               <Text style={styles.title}>Reset Password</Text>
-              <Text style={styles.hint}>Enter your username or email and choose a new password.</Text>
+              <Text style={styles.hint}>
+                Enter your email address and we'll send you a link to reset your password.
+              </Text>
 
               {error ? (
                 <View style={styles.errorBox}>
@@ -80,48 +74,28 @@ export default function ForgotPasswordScreen({ navigation }) {
                 </View>
               ) : null}
 
-              <Text style={styles.label}>Username or Email</Text>
+              <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                value={usernameOrEmail}
-                onChangeText={setUsernameOrEmail}
+                value={email}
+                onChangeText={setEmail}
                 autoCapitalize="none"
                 autoCorrect={false}
-                placeholder="Enter your username or email"
+                placeholder="Enter your email"
                 placeholderTextColor="#9ca3af"
                 keyboardType="email-address"
               />
 
-              <Text style={styles.label}>New Password</Text>
-              <TextInput
-                style={styles.input}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                placeholder="Enter new password"
-                placeholderTextColor="#9ca3af"
-              />
-
-              <Text style={styles.label}>Confirm New Password</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                placeholder="Confirm new password"
-                placeholderTextColor="#9ca3af"
-              />
-
               <TouchableOpacity
                 style={[styles.btn, loading && styles.btnDisabled]}
-                onPress={handleReset}
+                onPress={handleSubmit}
                 disabled={loading}
                 activeOpacity={0.8}
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.btnText}>Reset Password</Text>
+                  <Text style={styles.btnText}>Send Reset Link</Text>
                 )}
               </TouchableOpacity>
 

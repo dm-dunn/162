@@ -42,7 +42,7 @@ export default function ProfileScreen() {
       const response = await api.get('/picks/stats');
       setStats(response.data.stats);
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      // Stats fetch failed — will show empty state
     } finally {
       setLoading(false);
     }
