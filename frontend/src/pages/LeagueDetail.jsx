@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { leagueService } from '../services/leagues';
 import { useAuth } from '../context/AuthContext';
 import Loading from '../components/common/Loading';
-import LeagueProgressionChart from '../components/league/LeagueProgressionChart';
+
+const LeagueProgressionChart = lazy(() => import('../components/league/LeagueProgressionChart'));
 
 export default function LeagueDetail() {
   const { id } = useParams();
@@ -198,8 +199,8 @@ export default function LeagueDetail() {
 
               {inviteResults.length > 0 && (
                 <div className="mt-2 space-y-1">
-                  {inviteResults.map((result, i) => (
-                    <div key={i} className={`text-xs px-2 py-1 rounded ${result.status === 'sent' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  {inviteResults.map((result) => (
+                    <div key={result.email} className={`text-xs px-2 py-1 rounded ${result.status === 'sent' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                       {result.email}: {result.status === 'sent' ? 'Invitation sent' : result.error || 'Failed'}
                     </div>
                   ))}
@@ -291,11 +292,13 @@ export default function LeagueDetail() {
                   </table>
                 </div>
 
-                <LeagueProgressionChart
-                  standings={standings}
-                  progression={progression}
-                  recentForm={recentForm}
-                />
+                <Suspense fallback={<div className="text-center py-4 text-gray-400 text-sm">Loading chart...</div>}>
+                  <LeagueProgressionChart
+                    standings={standings}
+                    progression={progression}
+                    recentForm={recentForm}
+                  />
+                </Suspense>
               </>
             )}
           </div>

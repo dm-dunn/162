@@ -21,7 +21,6 @@ export default function Leagues() {
       setShowCreate(false);
       refetch();
     } catch (err) {
-      console.error('League creation error:', err);
       setCreateError(err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create league');
     } finally {
       setCreating(false);

@@ -32,8 +32,8 @@
     "production": {
       "ios": {
         "appleId": "redsfanatic94@yahoo.com",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "ascAppId": "6761118695",
+        "appleTeamId": "9XMA3HFTVX"
       },
       "android": {
         "serviceAccountKeyPath": "./google-services-key.json",

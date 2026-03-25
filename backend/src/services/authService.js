@@ -28,8 +28,18 @@ class AuthService {
         }
     }
 
+    static hashToken(token) {
+        return crypto.createHash('sha256').update(token).digest('hex');
+    }
+
+    static async storeRefreshToken(userId, refreshToken) {
+        const tokenHash = this.hashToken(refreshToken);
+        const decoded = this.verifyToken(refreshToken);
+        const expiresAt = new Date(decoded.exp * 1000);
+        await User.createRefreshToken(userId, tokenHash, expiresAt);
+    }
+
     static async register({ username, email, password, color }) {
-        // Check if user exists
         const existingUser = await User.findByUsername(username);
         if (existingUser) {
             throw new Error('Username already exists');
@@ -40,17 +50,15 @@ class AuthService {
             throw new Error('Email already exists');
         }
 
-        // Create user
         const user = await User.create({ username, email, password, color });
 
         // Generate verification token
         const rawToken = crypto.randomBytes(32).toString('hex');
-        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const tokenHash = this.hashToken(rawToken);
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         await User.createVerificationToken(user.id, tokenHash, expiresAt);
 
-        // Send verification email (don't block registration if email fails)
         if (process.env.NODE_ENV === 'development') {
             console.log(`\n[DEV] Email verification token for ${email}:\n  Token: ${rawToken}\n  URL: ${process.env.APP_URL}/verify-email?token=${rawToken}\n  Direct API: GET http://localhost:${process.env.PORT || 3000}/api/auth/verify-email?token=${rawToken}\n`);
         }
@@ -60,9 +68,11 @@ class AuthService {
             console.error('Failed to send verification email:', err.message);
         }
 
-        // Generate auth tokens
         const accessToken = this.generateToken(user.id);
         const refreshToken = this.generateRefreshToken(user.id);
+
+        // Store refresh token server-side
+        await this.storeRefreshToken(user.id, refreshToken);
 
         return {
             user: {
@@ -91,6 +101,9 @@ class AuthService {
         const accessToken = this.generateToken(user.id);
         const refreshToken = this.generateRefreshToken(user.id);
 
+        // Store refresh token server-side
+        await this.storeRefreshToken(user.id, refreshToken);
+
         return {
             user: {
                 id: user.id,
@@ -110,6 +123,13 @@ class AuthService {
             throw new Error('Invalid refresh token');
         }
 
+        // Verify token exists server-side and is not revoked
+        const tokenHash = this.hashToken(refreshToken);
+        const storedToken = await User.findRefreshToken(tokenHash);
+        if (!storedToken) {
+            throw new Error('Refresh token revoked or expired');
+        }
+
         const user = await User.findById(decoded.userId);
         if (!user) {
             throw new Error('User not found');
@@ -119,8 +139,15 @@ class AuthService {
         return { accessToken: newAccessToken };
     }
 
+    static async logout(refreshToken) {
+        if (refreshToken) {
+            const tokenHash = this.hashToken(refreshToken);
+            await User.revokeRefreshToken(tokenHash);
+        }
+    }
+
     static async verifyEmail(token) {
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const tokenHash = this.hashToken(token);
 
         const tokenRecord = await User.findVerificationToken(tokenHash);
         if (!tokenRecord) {
@@ -147,14 +174,13 @@ class AuthService {
             throw new Error('Email already verified');
         }
 
-        // Rate limit: 1 per minute
         const recentCount = await User.getRecentVerificationTokenCount(userId, 1);
         if (recentCount >= 1) {
             throw new Error('Please wait before requesting another verification email');
         }
 
         const rawToken = crypto.randomBytes(32).toString('hex');
-        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const tokenHash = this.hashToken(rawToken);
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         await User.createVerificationToken(userId, tokenHash, expiresAt);
@@ -169,6 +195,54 @@ class AuthService {
         }
 
         return { message: 'Verification email sent' };
+    }
+
+    static async forgotPassword(email) {
+        // Rate limit: 3 per hour per email
+        const recentCount = await User.getRecentPasswordResetCount(email, 60);
+        if (recentCount >= 3) {
+            throw new Error('Too many password reset requests. Please try again later.');
+        }
+
+        const user = await User.findByEmail(email);
+        // Always return success to prevent email enumeration
+        if (!user) {
+            return { message: 'If an account with that email exists, a password reset link has been sent.' };
+        }
+
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = this.hashToken(rawToken);
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        await User.createPasswordResetToken(user.id, tokenHash, expiresAt);
+
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`\n[DEV] Password reset token for ${email}:\n  Token: ${rawToken}\n  URL: ${process.env.APP_URL}/reset-password?token=${rawToken}\n`);
+        }
+        try {
+            await EmailService.sendPasswordResetEmail(email, rawToken);
+        } catch (err) {
+            console.error('Failed to send password reset email:', err.message);
+        }
+
+        return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    }
+
+    static async resetPassword(token, newPassword) {
+        const tokenHash = this.hashToken(token);
+
+        const tokenRecord = await User.findPasswordResetToken(tokenHash);
+        if (!tokenRecord) {
+            throw new Error('Invalid or expired reset token');
+        }
+
+        await User.updatePassword(tokenRecord.user_id, newPassword);
+        await User.markPasswordResetTokenUsed(tokenRecord.id);
+
+        // Revoke all refresh tokens for this user (force re-login)
+        await User.revokeAllRefreshTokens(tokenRecord.user_id);
+
+        return { message: 'Password reset successfully. Please log in with your new password.' };
     }
 }
 

@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { initRedis } = require('./config/redis');
 const { initializeJobs } = require('./jobs/scheduler');
 const errorHandler = require('./middleware/errorHandler');
+const logger = require('./config/logger');
 
 // Import routes
 const webRoutes = require('./routes/web');
@@ -20,19 +21,49 @@ const app = express();
 
 // Middleware
 app.use(helmet());
+
+// CORS with origin whitelist
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map(o => o.trim());
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true
 }));
 app.use(express.json());
 
-// Rate limiting
+// Request logging (runs before validation so all requests are captured)
+app.use((req, res, next) => {
+    logger.info(`${req.method} ${req.path}`, { ip: req.ip });
+    next();
+});
+
+// General rate limiting
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) || 60000,
     max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
     message: 'Too many requests from this IP'
 });
 app.use('/api/', limiter);
+
+// Stricter rate limiting for auth endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20,
+    message: 'Too many authentication attempts. Please try again later.'
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
 
 // Web routes (invite landing pages — no /api prefix, no rate limiting)
 app.use('/', webRoutes);
@@ -49,8 +80,7 @@ app.use('/api/admin', adminRoutes);
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -69,7 +99,8 @@ async function start() {
         // Start server
         const PORT = process.env.PORT || 3000;
         app.listen(PORT, () => {
-            console.log(`
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`
 ╔════════════════════════════════════════╗
 ║     MLB162 Backend Server Running      ║
 ║                                        ║
@@ -77,10 +108,13 @@ async function start() {
 ║     Environment: ${process.env.NODE_ENV || 'development'}           ║
 ║                                        ║
 ╚════════════════════════════════════════╝
-            `);
+                `);
+            } else {
+                logger.info(`MLB162 server started on port ${PORT}`);
+            }
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
+        logger.error('Failed to start server:', error);
         process.exit(1);
     }
 }

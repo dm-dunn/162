@@ -104,6 +104,90 @@ class User {
         );
         return result.rows[0];
     }
+
+    // Password reset tokens
+    static async createPasswordResetToken(userId, tokenHash, expiresAt) {
+        const result = await pool.query(
+            `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+             VALUES ($1, $2, $3) RETURNING id`,
+            [userId, tokenHash, expiresAt]
+        );
+        return result.rows[0];
+    }
+
+    static async findPasswordResetToken(tokenHash) {
+        const result = await pool.query(
+            `SELECT prt.*, u.email
+             FROM password_reset_tokens prt
+             JOIN users u ON prt.user_id = u.id
+             WHERE prt.token_hash = $1
+             AND prt.used_at IS NULL
+             AND prt.expires_at > NOW()`,
+            [tokenHash]
+        );
+        return result.rows[0];
+    }
+
+    static async markPasswordResetTokenUsed(tokenId) {
+        await pool.query(
+            'UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1',
+            [tokenId]
+        );
+    }
+
+    static async getRecentPasswordResetCount(email, minutes = 60) {
+        const result = await pool.query(
+            `SELECT COUNT(*) as count FROM password_reset_tokens prt
+             JOIN users u ON prt.user_id = u.id
+             WHERE u.email = $1 AND prt.created_at > NOW() - INTERVAL '1 minute' * $2`,
+            [email, minutes]
+        );
+        return parseInt(result.rows[0].count);
+    }
+
+    // Refresh tokens
+    static async createRefreshToken(userId, tokenHash, expiresAt) {
+        const result = await pool.query(
+            `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+             VALUES ($1, $2, $3) RETURNING id`,
+            [userId, tokenHash, expiresAt]
+        );
+        return result.rows[0];
+    }
+
+    static async findRefreshToken(tokenHash) {
+        const result = await pool.query(
+            `SELECT * FROM refresh_tokens
+             WHERE token_hash = $1
+             AND revoked_at IS NULL
+             AND expires_at > NOW()`,
+            [tokenHash]
+        );
+        return result.rows[0];
+    }
+
+    static async revokeRefreshToken(tokenHash) {
+        await pool.query(
+            'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1',
+            [tokenHash]
+        );
+    }
+
+    static async revokeAllRefreshTokens(userId) {
+        await pool.query(
+            'UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+            [userId]
+        );
+    }
+
+    static async cleanupExpiredTokens() {
+        await pool.query(
+            'DELETE FROM refresh_tokens WHERE expires_at < NOW() OR revoked_at IS NOT NULL'
+        );
+        await pool.query(
+            'DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used_at IS NOT NULL'
+        );
+    }
 }
 
 module.exports = User;

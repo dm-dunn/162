@@ -25,7 +25,7 @@ export default function Profile() {
       const response = await api.get('/picks/stats');
       setStats(response.data.stats);
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      // Stats fetch failed — will show empty state
     } finally {
       setLoading(false);
     }

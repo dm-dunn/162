@@ -1,6 +1,7 @@
 const axios = require('axios');
 
 const MLB_API_BASE = 'https://statsapi.mlb.com/api/v1';
+const MLB_API_BASE_V11 = 'https://statsapi.mlb.com/api/v1.1';
 let requestCount = 0;
 const MAX_REQUESTS_PER_MINUTE = 10;
 
@@ -26,7 +27,7 @@ async function getSchedule(date) {
 }
 
 async function getGameDetails(gameId) {
-    const url = `${MLB_API_BASE}/game/${gameId}/feed/live`;
+    const url = `${MLB_API_BASE_V11}/game/${gameId}/feed/live`;
     return await rateLimitedRequest(url);
 }
 

@@ -134,9 +134,9 @@ export default function LeagueProgressionChart({ standings, progression, recentF
                 <div className="w-5 h-5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color || '#1e40af' }} />
                 <span className="text-xs text-gray-600 w-24 truncate">{s.username}</span>
                 <div className="flex gap-0.5">
-                  {form.map((pick, i) => (
+                  {form.map((pick) => (
                     <span
-                      key={i}
+                      key={pick.pick_date || pick.id}
                       title={pick.result}
                       className={`w-4 h-4 rounded-sm text-[9px] font-bold flex items-center justify-center ${
                         pick.result === 'win'

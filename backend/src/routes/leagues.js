@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { League } = require('../models');
 const { authenticate, requireEmailVerified } = require('../middleware/auth');
-const { validate, schemas } = require('../middleware/validation');
+const { validate, schemas, validateIdParam } = require('../middleware/validation');
 const EmailService = require('../services/emailService');
 
 const router = express.Router();
@@ -121,7 +121,7 @@ router.post('/', authenticate, requireEmailVerified, validate(schemas.createLeag
 });
 
 // Get league details
-router.get('/:id', authenticate, async (req, res, next) => {
+router.get('/:id', authenticate, validateIdParam('id'), async (req, res, next) => {
     try {
         const league = await League.findById(req.params.id);
         if (!league) {
@@ -148,7 +148,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
 });
 
 // Get league standings
-router.get('/:id/standings', authenticate, async (req, res, next) => {
+router.get('/:id/standings', authenticate, validateIdParam('id'), async (req, res, next) => {
     try {
         const league = await League.findById(req.params.id);
         if (!league) {
@@ -168,7 +168,7 @@ router.get('/:id/standings', authenticate, async (req, res, next) => {
 });
 
 // Get league points progression (for line chart)
-router.get('/:id/progression', authenticate, async (req, res, next) => {
+router.get('/:id/progression', authenticate, validateIdParam('id'), async (req, res, next) => {
     try {
         const league = await League.findById(req.params.id);
         if (!league) return res.status(404).json({ error: 'League not found' });
@@ -187,7 +187,7 @@ router.get('/:id/progression', authenticate, async (req, res, next) => {
 });
 
 // Invite users by email
-router.post('/:id/invite', authenticate, requireEmailVerified, validate(schemas.inviteToLeague), async (req, res, next) => {
+router.post('/:id/invite', authenticate, validateIdParam('id'), requireEmailVerified, validate(schemas.inviteToLeague), async (req, res, next) => {
     try {
         const league = await League.findById(req.params.id);
         if (!league) {
@@ -229,7 +229,7 @@ router.post('/:id/invite', authenticate, requireEmailVerified, validate(schemas.
 });
 
 // Leave a league
-router.post('/:id/leave', authenticate, async (req, res, next) => {
+router.post('/:id/leave', authenticate, validateIdParam('id'), async (req, res, next) => {
     try {
         const isOwner = await League.isOwner(req.params.id, req.user.id);
         if (isOwner) {
@@ -244,7 +244,7 @@ router.post('/:id/leave', authenticate, async (req, res, next) => {
 });
 
 // Delete a league (owner only)
-router.delete('/:id', authenticate, async (req, res, next) => {
+router.delete('/:id', authenticate, validateIdParam('id'), async (req, res, next) => {
     try {
         const isOwner = await League.isOwner(req.params.id, req.user.id);
         if (!isOwner) {
@@ -259,7 +259,7 @@ router.delete('/:id', authenticate, async (req, res, next) => {
 });
 
 // Remove a member (owner only)
-router.delete('/:id/members/:userId', authenticate, async (req, res, next) => {
+router.delete('/:id/members/:userId', authenticate, validateIdParam('id'), async (req, res, next) => {
     try {
         const isOwner = await League.isOwner(req.params.id, req.user.id);
         if (!isOwner) {

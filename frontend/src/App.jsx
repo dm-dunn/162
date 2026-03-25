@@ -11,7 +11,10 @@ import VerifyEmail from './pages/VerifyEmail';
 import Leagues from './pages/Leagues';
 import LeagueDetail from './pages/LeagueDetail';
 import JoinLeague from './pages/JoinLeague';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 function AppContent() {
   const { user } = useAuth();
@@ -21,10 +24,13 @@ function AppContent() {
       <Header />
       <main className="container mx-auto px-4 py-8">
         {user && !user.emailVerified && <EmailVerificationBanner />}
+        <ErrorBoundary>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/leagues/join" element={<JoinLeague />} />
 
           <Route path="/dashboard" element={
@@ -59,6 +65,7 @@ function AppContent() {
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </ErrorBoundary>
       </main>
     </div>
   );

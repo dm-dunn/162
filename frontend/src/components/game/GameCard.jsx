@@ -89,6 +89,7 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
               src={getTeamLogo(game.away_team_abbr)}
               alt={getTeamName(game.away_team_abbr)}
               className="w-16 h-16 object-contain mb-2"
+              loading="lazy"
             />
             <div className="font-bold text-lg">{game.away_team_abbr}</div>
             {game.away_score !== null && (
@@ -153,6 +154,7 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
               src={getTeamLogo(game.home_team_abbr)}
               alt={getTeamName(game.home_team_abbr)}
               className="w-16 h-16 object-contain mb-2"
+              loading="lazy"
             />
             <div className="font-bold text-lg">{game.home_team_abbr}</div>
             {game.home_score !== null && (

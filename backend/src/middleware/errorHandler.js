@@ -1,5 +1,13 @@
+const logger = require('../config/logger');
+
 function errorHandler(err, req, res, next) {
-    console.error('Error:', err);
+    // Log error with sanitized info (no request body which may contain passwords)
+    logger.error('Request error', {
+        message: err.message,
+        path: req.path,
+        method: req.method,
+        stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
+    });
 
     if (err.name === 'ValidationError') {
         return res.status(400).json({
@@ -20,7 +28,16 @@ function errorHandler(err, req, res, next) {
         return res.status(400).json({ error: err.message });
     }
 
-    if (err.message === 'Please wait before requesting another verification email') {
+    if (err.message === 'Invalid or expired reset token') {
+        return res.status(400).json({ error: err.message });
+    }
+
+    if (err.message === 'Refresh token revoked or expired') {
+        return res.status(401).json({ error: err.message });
+    }
+
+    if (err.message === 'Please wait before requesting another verification email' ||
+        err.message === 'Too many password reset requests. Please try again later.') {
         return res.status(429).json({ error: err.message });
     }
 
@@ -30,6 +47,10 @@ function errorHandler(err, req, res, next) {
 
     if (err.message === 'Member not found or cannot remove owner') {
         return res.status(400).json({ error: err.message });
+    }
+
+    if (err.message === 'Not allowed by CORS') {
+        return res.status(403).json({ error: 'CORS policy violation' });
     }
 
     res.status(500).json({

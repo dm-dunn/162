@@ -1,12 +1,15 @@
 const Joi = require('joi');
+const logger = require('../config/logger');
 
 function validate(schema) {
     return (req, res, next) => {
         const { error } = schema.validate(req.body);
         if (error) {
+            const details = error.details.map(d => d.message);
+            logger.warn('Validation failed', { path: req.path, details });
             return res.status(400).json({
                 error: 'Validation error',
-                details: error.details.map(d => d.message)
+                details
             });
         }
         next();
@@ -54,7 +57,19 @@ const schemas = {
     })
 };
 
+function validateIdParam(paramName = 'id') {
+    return (req, res, next) => {
+        const value = parseInt(req.params[paramName], 10);
+        if (isNaN(value) || value < 1) {
+            return res.status(400).json({ error: `Invalid ${paramName} parameter` });
+        }
+        req.params[paramName] = value;
+        next();
+    };
+}
+
 module.exports = {
     validate,
-    schemas
+    schemas,
+    validateIdParam
 };

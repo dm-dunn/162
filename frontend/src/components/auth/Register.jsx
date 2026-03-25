@@ -64,7 +64,7 @@ export default function Register() {
           await leagueService.joinLeague(leagueToken);
           setLeagueJoined(true);
         } catch (err) {
-          console.error('Failed to auto-join league:', err);
+          // Auto-join failed silently — user can join manually later
         }
       }
 

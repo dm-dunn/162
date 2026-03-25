@@ -37,6 +37,16 @@ router.post('/refresh', async (req, res, next) => {
     }
 });
 
+router.post('/logout', async (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+        await AuthService.logout(refreshToken);
+        res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.get('/verify-email', async (req, res, next) => {
     try {
         const { token } = req.query;
@@ -59,24 +69,32 @@ router.post('/resend-verification', authenticate, async (req, res, next) => {
     }
 });
 
+router.post('/forgot-password', async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const result = await AuthService.forgotPassword(email);
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.post('/reset-password', async (req, res, next) => {
     try {
-        const { usernameOrEmail, newPassword } = req.body;
-        if (!usernameOrEmail || !newPassword) {
-            return res.status(400).json({ error: 'Username/email and new password are required' });
+        const { token, newPassword } = req.body;
+        if (!token || !newPassword) {
+            return res.status(400).json({ error: 'Token and new password are required' });
         }
         if (newPassword.length < 6) {
             return res.status(400).json({ error: 'Password must be at least 6 characters' });
         }
 
-        const User = require('../models/User');
-        const user = await User.findByUsername(usernameOrEmail) || await User.findByEmail(usernameOrEmail);
-        if (!user) {
-            return res.status(404).json({ error: 'No account found with that username or email' });
-        }
-
-        await User.updatePassword(user.id, newPassword);
-        res.json({ message: 'Password updated successfully' });
+        const result = await AuthService.resetPassword(token, newPassword);
+        res.json(result);
     } catch (error) {
         next(error);
     }

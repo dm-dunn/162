@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { USE_MOCK_DATA } from '../utils/mockData';
 
@@ -7,11 +7,7 @@ export function useLeagues() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchLeagues();
-  }, []);
-
-  const fetchLeagues = async () => {
+  const fetchLeagues = useCallback(async (signal) => {
     if (USE_MOCK_DATA) {
       setLeagues([]);
       setLoading(false);
@@ -20,15 +16,22 @@ export function useLeagues() {
 
     try {
       setLoading(true);
-      const response = await api.get('/leagues');
+      const response = await api.get('/leagues', { signal });
       setLeagues(response.data.leagues);
       setError(null);
     } catch (err) {
+      if (err.name === 'CanceledError') return;
       setError(err.response?.data?.error || 'Failed to fetch leagues');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  return { leagues, loading, error, refetch: fetchLeagues };
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchLeagues(controller.signal);
+    return () => controller.abort();
+  }, [fetchLeagues]);
+
+  return { leagues, loading, error, refetch: () => fetchLeagues() };
 }

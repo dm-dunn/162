@@ -47,7 +47,13 @@ export function AuthProvider({ children }) {
     localStorage.setItem('refreshToken', data.refreshToken);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    try {
+      await authService.logout(refreshToken);
+    } catch (_) {
+      // Best-effort server-side logout
+    }
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
@@ -58,7 +64,7 @@ export function AuthProvider({ children }) {
       const userData = await authService.getCurrentUser();
       setUser(userData);
     } catch (error) {
-      console.error('Failed to refresh user:', error);
+      // Silently fail — user will need to re-login if refresh fails
     }
   };
 
