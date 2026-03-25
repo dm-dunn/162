@@ -42,7 +42,7 @@ app.use(express.json());
 
 // Request logging (runs before validation so all requests are captured)
 app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.path}`, { ip: req.ip });
+    logger.warn(`${req.method} ${req.path}`, { ip: req.ip });
     next();
 });
 

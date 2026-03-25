@@ -5,7 +5,7 @@ require('dotenv').config();
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: parseInt(process.env.DB_POOL_MAX) || 20,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 pool.on('connect', () => {
