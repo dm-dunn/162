@@ -31,7 +31,7 @@ class User {
 
     static async findById(id) {
         const result = await pool.query(
-            'SELECT id, username, email, email_verified, color, is_admin, created_at FROM users WHERE id = $1 AND is_active = true',
+            'SELECT id, username, email, email_verified, color, is_admin, must_change_password, created_at FROM users WHERE id = $1 AND is_active = true',
             [id]
         );
         return result.rows[0];
@@ -98,11 +98,18 @@ class User {
     static async updatePassword(userId, newPassword) {
         const passwordHash = await bcrypt.hash(newPassword, 12);
         const result = await pool.query(
-            `UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP
+            `UPDATE users SET password_hash = $1, must_change_password = false, updated_at = CURRENT_TIMESTAMP
              WHERE id = $2 RETURNING id`,
             [passwordHash, userId]
         );
         return result.rows[0];
+    }
+
+    static async setMustChangePassword(userId, value) {
+        await pool.query(
+            'UPDATE users SET must_change_password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [value, userId]
+        );
     }
 
     // Password reset tokens

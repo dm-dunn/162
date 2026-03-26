@@ -100,6 +100,19 @@ router.post('/reset-password', async (req, res, next) => {
     }
 });
 
+router.post('/change-password', authenticate, async (req, res, next) => {
+    try {
+        const { newPassword } = req.body;
+        if (!newPassword) {
+            return res.status(400).json({ error: 'New password is required' });
+        }
+        const result = await AuthService.changePassword(req.user.id, newPassword);
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.get('/me', authenticate, async (req, res) => {
     res.json({
         user: {
@@ -108,7 +121,8 @@ router.get('/me', authenticate, async (req, res) => {
             email: req.user.email,
             color: req.user.color,
             emailVerified: req.user.email_verified,
-            isAdmin: req.user.is_admin
+            isAdmin: req.user.is_admin,
+            mustChangePassword: req.user.must_change_password || false
         }
     });
 });

@@ -81,6 +81,39 @@ class EmailService {
         });
     }
 
+    static async sendTemporaryPasswordEmail(email, tempPassword) {
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: email,
+            subject: 'Your MLB162 temporary password',
+            html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+                    <div style="text-align: center; margin-bottom: 32px;">
+                        <h1 style="color: #1e3a5f; font-size: 28px; margin: 0;">
+                            MLB<span style="color: #dc2626;">162</span>
+                        </h1>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px;">
+                        <h2 style="color: #1e3a5f; font-size: 22px; margin-top: 0;">Temporary password</h2>
+                        <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+                            We received a request to reset your MLB162 password. Use the temporary password below to sign in to the app — you'll be asked to create a new password right away.
+                        </p>
+                        <div style="background: #f3f4f6; border: 2px dashed #d1d5db; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
+                            <p style="color: #6b7280; font-size: 13px; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">Your temporary password</p>
+                            <p style="color: #111827; font-size: 28px; font-weight: 700; letter-spacing: 0.1em; margin: 0; font-family: monospace;">${tempPassword}</p>
+                        </div>
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6;">
+                            Open the MLB162 app, sign in with your email and this temporary password, then follow the prompts to set a permanent password.
+                        </p>
+                        <p style="color: #9ca3af; font-size: 13px; line-height: 1.5;">
+                            If you didn't request this, your account password has still been changed. Sign in with this temporary password immediately and set a new permanent password to secure your account.
+                        </p>
+                    </div>
+                </div>
+            `
+        });
+    }
+
     static async sendLeagueInvitation(email, leagueName, inviterName, token) {
         const joinUrl = `${APP_URL}/leagues/join?token=${token}`;
 

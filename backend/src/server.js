@@ -19,6 +19,9 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// Trust Render's proxy (required for express-rate-limit and accurate IP logging)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 

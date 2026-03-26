@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { User } = require('../models');
 const EmailService = require('./emailService');
+const logger = require('../config/logger');
 
 class AuthService {
     static generateToken(userId) {
@@ -65,7 +66,7 @@ class AuthService {
         try {
             await EmailService.sendVerificationEmail(email, rawToken);
         } catch (err) {
-            console.error('Failed to send verification email:', err.message);
+            logger.error('Failed to send verification email', { error: err.message });
         }
 
         const accessToken = this.generateToken(user.id);
@@ -110,7 +111,8 @@ class AuthService {
                 username: user.username,
                 email: user.email,
                 color: user.color,
-                emailVerified: user.email_verified
+                emailVerified: user.email_verified,
+                mustChangePassword: user.must_change_password || false
             },
             accessToken,
             refreshToken
@@ -191,41 +193,46 @@ class AuthService {
         try {
             await EmailService.sendVerificationEmail(user.email, rawToken);
         } catch (err) {
-            console.error('Failed to send verification email:', err.message);
+            logger.error('Failed to send verification email', { error: err.message });
         }
 
         return { message: 'Verification email sent' };
     }
 
-    static async forgotPassword(email) {
-        // Rate limit: 3 per hour per email
-        const recentCount = await User.getRecentPasswordResetCount(email, 60);
-        if (recentCount >= 3) {
-            throw new Error('Too many password reset requests. Please try again later.');
+    static generateTempPassword() {
+        // Readable alphanumeric chars, excluding ambiguous characters (0, O, I, l, 1)
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        let password = '';
+        const bytes = crypto.randomBytes(12);
+        for (let i = 0; i < 12; i++) {
+            password += chars[bytes[i] % chars.length];
         }
+        return password;
+    }
 
+    static async forgotPassword(email) {
         const user = await User.findByEmail(email);
         // Always return success to prevent email enumeration
         if (!user) {
-            return { message: 'If an account with that email exists, a password reset link has been sent.' };
+            return { message: 'If an account with that email exists, a temporary password has been sent.' };
         }
 
-        const rawToken = crypto.randomBytes(32).toString('hex');
-        const tokenHash = this.hashToken(rawToken);
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        const tempPassword = this.generateTempPassword();
 
-        await User.createPasswordResetToken(user.id, tokenHash, expiresAt);
+        // Set the temp password and flag the account for forced password change
+        await User.updatePassword(user.id, tempPassword);
+        await User.setMustChangePassword(user.id, true);
 
         if (process.env.NODE_ENV === 'development') {
-            console.log(`\n[DEV] Password reset token for ${email}:\n  Token: ${rawToken}\n  URL: ${process.env.APP_URL}/reset-password?token=${rawToken}\n`);
+            console.log(`\n[DEV] Temporary password for ${email}:\n  Temp password: ${tempPassword}\n`);
         }
         try {
-            await EmailService.sendPasswordResetEmail(email, rawToken);
+            await EmailService.sendTemporaryPasswordEmail(email, tempPassword);
         } catch (err) {
-            console.error('Failed to send password reset email:', err.message);
+            logger.error('Failed to send temporary password email', { error: err.message });
         }
 
-        return { message: 'If an account with that email exists, a password reset link has been sent.' };
+        return { message: 'If an account with that email exists, a temporary password has been sent.' };
     }
 
     static async resetPassword(token, newPassword) {
@@ -243,6 +250,14 @@ class AuthService {
         await User.revokeAllRefreshTokens(tokenRecord.user_id);
 
         return { message: 'Password reset successfully. Please log in with your new password.' };
+    }
+
+    static async changePassword(userId, newPassword) {
+        if (!newPassword || newPassword.length < 6) {
+            throw new Error('Password must be at least 6 characters');
+        }
+        await User.updatePassword(userId, newPassword);
+        return { message: 'Password changed successfully.' };
     }
 }
 
