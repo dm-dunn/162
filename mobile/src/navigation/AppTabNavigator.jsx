@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import DashboardScreen from '../screens/DashboardScreen';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
 import LeaguesScreen from '../screens/LeaguesScreen';
 import LeagueDetailScreen from '../screens/LeagueDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -32,7 +33,9 @@ export default function AppTabNavigator() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           if (route.name === 'Dashboard') {
-            iconName = focused ? 'home' : 'home-outline';
+            iconName = focused ? 'baseball' : 'baseball-outline';
+          } else if (route.name === 'Leaderboard') {
+            iconName = focused ? 'trophy' : 'trophy-outline';
           } else if (route.name === 'Leagues') {
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Profile') {
@@ -40,19 +43,21 @@ export default function AppTabNavigator() {
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#FF0000',
-        tabBarInactiveTintColor: '#666',
+        tabBarActiveTintColor: '#E8B84B',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.35)',
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#e5e7eb',
-          borderTopWidth: 1,
+          backgroundColor: '#0D1B4F',
+          borderTopWidth: 3,
+          borderTopColor: '#C41E3A',
           paddingBottom: 16,
-          paddingTop: 4,
-          height: 72,
+          paddingTop: 6,
+          height: 76,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
+          fontSize: 10,
+          fontWeight: '700',
+          letterSpacing: 1,
+          textTransform: 'uppercase',
         },
         headerShown: false,
       })}
@@ -60,7 +65,12 @@ export default function AppTabNavigator() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ title: 'Home' }}
+        options={{ title: 'Today' }}
+      />
+      <Tab.Screen
+        name="Leaderboard"
+        component={LeaderboardScreen}
+        options={{ title: 'Standings' }}
       />
       <Tab.Screen
         name="Leagues"

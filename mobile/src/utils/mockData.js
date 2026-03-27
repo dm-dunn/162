@@ -48,7 +48,7 @@ export const mockGames = [
     game_date: new Date().toISOString().split('T')[0],
     game_time: new Date(new Date().setHours(16, 20, 0, 0)).toISOString(),
     home_team_abbr: 'HOU',
-    away_team_abbr: 'OAK',
+    away_team_abbr: 'ATH',
     home_score: null,
     away_score: null,
     spread: -1.5,

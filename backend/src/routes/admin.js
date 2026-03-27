@@ -2,6 +2,7 @@ const express = require('express');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const MLBDataService = require('../services/mlbDataService');
 const ScoringService = require('../services/scoringService');
+const CacheService = require('../services/cacheService');
 const { Game } = require('../models');
 
 const router = express.Router();
@@ -87,6 +88,31 @@ router.post('/jobs/update-leaderboard', async (req, res, next) => {
         res.json({
             success: true,
             message: 'Leaderboard updated successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Force a fresh game fetch for a specific date, bypassing both the schedule
+// cache and the auto-fetch lock. Useful when the cron job missed a day or
+// when you need to pull an updated schedule mid-day.
+router.post('/jobs/force-fetch-games', async (req, res, next) => {
+    try {
+        const date = req.body.date ? new Date(req.body.date) : new Date();
+        const dateStr = date.toISOString().split('T')[0];
+
+        // Clear both cache keys so fetchDailyGames hits the API fresh.
+        await CacheService.delete(`schedule:${dateStr}`);
+        await CacheService.delete(`auto_fetch_lock:${dateStr}`);
+
+        const games = await MLBDataService.fetchDailyGames(date);
+
+        res.json({
+            success: true,
+            date: dateStr,
+            count: games.length,
+            games
         });
     } catch (error) {
         next(error);

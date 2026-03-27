@@ -46,6 +46,11 @@ export const authService = {
     return response.data;
   },
 
+  async changePassword(newPassword) {
+    const response = await api.post('/auth/change-password', { newPassword });
+    return response.data;
+  },
+
   async logout(refreshToken) {
     const response = await api.post('/auth/logout', { refreshToken });
     return response.data;

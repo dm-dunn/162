@@ -1,38 +1,104 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
+
+// Retro baseball card color palette
+const C = {
+  cream: '#F4E9D0',
+  creamDark: '#E8D9B8',
+  creamDeep: '#D4C098',
+  parchment: '#F9F3E3',
+  red: '#C41E3A',
+  redDark: '#9E1730',
+  navy: '#0D1B4F',
+  navyMid: '#1A2F6E',
+  gold: '#C4912A',
+  goldLight: '#E8B84B',
+  brown: '#3D2112',
+  ink: '#1A0F08',
+  inkMid: '#4A3728',
+  inkLight: '#7A6050',
+  green: '#2E6B3E',
+  white: '#FFFFFF',
+};
 
 export default function LeaderboardTable({ leaderboard, currentUserId }) {
   const maxPoints = Math.max(...leaderboard.map(e => e.total_points), 100);
 
+  const getMedalEmoji = (rank) => {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return null;
+  };
+
   return (
     <View style={styles.container}>
-      {leaderboard.map((entry) => {
+      {leaderboard.map((entry, idx) => {
         const isCurrentUser = entry.user_id === currentUserId;
         const pct = (entry.total_points / maxPoints) * 100;
-        const barColor = entry.color || '#1e40af';
+        const barColor = entry.color || C.navy;
+        const medal = getMedalEmoji(entry.rank);
+        const showDivider = (idx + 1) % 3 === 0 && idx < leaderboard.length - 1;
 
         return (
-          <View
-            key={entry.user_id}
-            style={[styles.row, isCurrentUser && styles.rowHighlight]}
-          >
-            {/* Rank number */}
-            <Text style={styles.rank}>{entry.rank}</Text>
+          <View key={entry.user_id}>
+            {/* Row */}
+            <View
+              style={[
+                styles.row,
+                isCurrentUser && styles.rowHighlight
+              ]}
+            >
+              {/* Rank / Medal */}
+              <View style={styles.rankContainer}>
+                {medal ? (
+                  <Text style={styles.medal}>{medal}</Text>
+                ) : (
+                  <Text style={styles.rank}>{entry.rank}</Text>
+                )}
+              </View>
 
-            {/* Bar */}
-            <View style={styles.barBg}>
-              <View style={[styles.bar, { width: `${Math.max(pct, 12)}%`, backgroundColor: barColor }]}>
-                {/* Glossy overlay */}
-                <View style={styles.gloss} />
-                <View style={styles.barContent}>
-                  <Text style={styles.barName} numberOfLines={1}>
-                    {entry.username}
-                    {isCurrentUser ? ' (You)' : ''}
-                  </Text>
-                  <Text style={styles.barPoints}>{entry.total_points}</Text>
+              {/* Color Dot */}
+              <View
+                style={[
+                  styles.colorDot,
+                  { backgroundColor: barColor }
+                ]}
+              />
+
+              {/* Bar Container */}
+              <View style={styles.barBg}>
+                <View
+                  style={[
+                    styles.bar,
+                    {
+                      width: `${Math.max(pct, 15)}%`,
+                      backgroundColor: barColor
+                    }
+                  ]}
+                >
+                  {/* Subtle gradient overlay (lighter at top) */}
+                  <View style={styles.barGloss} />
+
+                  {/* Content */}
+                  <View style={styles.barContent}>
+                    <View style={styles.barNameContainer}>
+                      <Text style={styles.barName} numberOfLines={1}>
+                        {entry.username}
+                      </Text>
+                      {isCurrentUser && (
+                        <View style={styles.youTag}>
+                          <Text style={styles.youTagText}>YOU</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.barPoints}>{entry.total_points}</Text>
+                  </View>
                 </View>
               </View>
             </View>
+
+            {/* Divider after every 3rd row */}
+            {showDivider && <View style={styles.divider} />}
           </View>
         );
       })}
@@ -41,76 +107,136 @@ export default function LeaderboardTable({ leaderboard, currentUserId }) {
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 8 },
+  container: { gap: 12 },
+
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    padding: 4,
-    borderRadius: 10,
+    gap: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   rowHighlight: {
-    borderWidth: 2,
-    borderColor: '#FF0000',
-    borderRadius: 10,
-    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: C.red,
+    paddingHorizontal: 6,
+  },
+
+  // Rank section
+  rankContainer: {
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medal: {
+    fontSize: 20,
   },
   rank: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000080',
-    width: 28,
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '900',
+    color: C.navy,
+    letterSpacing: -0.5,
   },
-  barBg: {
-    flex: 1,
-    height: 38,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    overflow: 'hidden',
+
+  // Color dot
+  colorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.15,
     shadowRadius: 2,
     elevation: 1,
   },
+
+  // Bar background
+  barBg: {
+    flex: 1,
+    height: 40,
+    backgroundColor: C.creamDark,
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: C.creamDeep,
+  },
+
+  // Actual bar
   bar: {
     height: '100%',
-    borderRadius: 10,
+    borderRadius: 6,
     justifyContent: 'center',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  gloss: {
+
+  // Glossy overlay at top
+  barGloss: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: '50%',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
+    height: '40%',
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
+
+  // Bar content (username + points)
   barContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
     alignItems: 'center',
+    paddingHorizontal: 10,
+    zIndex: 1,
   },
-  barName: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
+
+  barNameContainer: {
     flex: 1,
-    marginRight: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  barPoints: {
-    color: '#fff',
+
+  barName: {
+    color: C.white,
     fontSize: 13,
     fontWeight: '700',
+    flex: 1,
+  },
+
+  youTag: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+
+  youTagText: {
+    color: C.white,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+
+  barPoints: {
+    color: C.white,
+    fontSize: 14,
+    fontWeight: '900',
+    marginLeft: 8,
+  },
+
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: C.creamDeep,
+    marginVertical: 4,
+    marginHorizontal: 0,
+    borderStyle: 'dashed',
+    opacity: 0.5,
   },
 });

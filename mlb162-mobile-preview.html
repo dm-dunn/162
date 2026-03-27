@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB162 — Mobile Design Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,700&family=Oswald:wght@300;400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:      #F4E9D0;
+    --cream-dark: #E8D9B8;
+    --cream-deep: #D4C098;
+    --parchment:  #F9F3E3;
+    --red:        #C41E3A;
+    --red-dark:   #9E1730;
+    --navy:       #0D1B4F;
+    --navy-mid:   #1A2F6E;
+    --gold:       #C4912A;
+    --gold-light: #E8B84B;
+    --brown:      #3D2112;
+    --ink:        #1A0F08;
+    --ink-mid:    #4A3728;
+    --ink-light:  #7A6050;
+    --green:      #2E6B3E;
+    --green-lt:   #D4EDDA;
+    --pinstripe:  rgba(13,27,79,0.06);
+    --tab-h:      64px;
+    --status-h:   44px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    background: #1a1a2e;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(13,27,79,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(196,30,58,0.15) 0%, transparent 50%);
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: 0.5;
+  }
+
+  /* ─── Page Layout ────────────────── */
+  .page-header {
+    text-align: center;
+    padding: 40px 24px 28px;
+    position: relative;
+  }
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 400;
+    font-style: italic;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .page-wordmark {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+  .page-wordmark span { color: var(--red); font-style: italic; }
+
+  /* Screen selector tabs */
+  .selector {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 24px 32px;
+    flex-wrap: wrap;
+  }
+  .sel-btn {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+  .sel-btn:hover { color: var(--gold-light); border-color: rgba(196,145,42,0.4); }
+  .sel-btn.active {
+    color: var(--gold-light);
+    border-color: var(--gold);
+    background: rgba(196,145,42,0.1);
+  }
+
+  /* ─── Phone Frame ────────────────── */
+  .phones-row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 0 40px 80px;
+    flex-wrap: wrap;
+  }
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .phone-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+  .phone-frame {
+    width: 375px;
+    height: 812px;
+    background: #0a0a0a;
+    border-radius: 50px;
+    padding: 12px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.08),
+      0 30px 80px rgba(0,0,0,0.6),
+      0 0 60px rgba(196,145,42,0.05) inset;
+    position: relative;
+    flex-shrink: 0;
+  }
+  /* Notch */
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 30px;
+    background: #0a0a0a;
+    border-radius: 0 0 20px 20px;
+    z-index: 10;
+  }
+  /* Side buttons */
+  .phone-frame::after {
+    content: '';
+    position: absolute;
+    right: -3px; top: 160px;
+    width: 3px; height: 60px;
+    background: #222;
+    border-radius: 2px;
+  }
+  .phone-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    background: var(--cream);
+  }
+
+  /* ─── Status Bar ─────────────────── */
+  .status-bar {
+    height: var(--status-h);
+    background: var(--navy);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 24px 8px;
+    position: relative;
+    z-index: 5;
+    flex-shrink: 0;
+  }
+  .status-time {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.04em;
+  }
+  .status-icons {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 3px;
+  }
+
+  /* ─── Screen content area ────────── */
+  .screen-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+  }
+  .screen-content::-webkit-scrollbar { display: none; }
+
+  /* Screen wrapper (full phone inner = status + content + tabs) */
+  .phone-screen {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+  }
+  .phone-screen.active { display: flex; }
+
+  /* ─── App Header (mobile) ────────── */
+  .app-bar {
+    background: var(--navy);
+    padding: 12px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--red);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .app-bar::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.5;
+  }
+  .app-bar-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+  .app-bar-logo span { color: var(--red); font-style: italic; }
+  .app-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .app-bar-date {
+    font-family: 'Special Elite', cursive;
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+  }
+  .app-bar-badge {
+    font-family: 'Oswald', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--navy);
+    background: var(--gold);
+    padding: 2px 6px;
+  }
+
+  /* ─── Bottom Tab Bar ─────────────── */
+  .tab-bar {
+    height: var(--tab-h);
+    background: var(--navy);
+    border-top: 2px solid var(--red);
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .tab-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.4;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+  .tab-item:last-child { border-right: none; }
+  .tab-icon { font-size: 18px; line-height: 1; }
+  .tab-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+  .tab-item.active .tab-label { color: var(--gold-light); }
+  .tab-item.active .tab-icon { filter: none; }
+  .tab-dot {
+    width: 4px; height: 4px;
+    background: var(--gold);
+    border-radius: 50%;
+    margin-top: 1px;
+  }
+
+  /* ─── Pinstripe background ───────── */
+  .pinstripe {
+    background-color: var(--cream);
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent, transparent 29px,
+      var(--pinstripe) 29px, var(--pinstripe) 30px
+    );
+  }
+
+  /* ─── Scrollable body ────────────── */
+  .scroll-body {
+    padding: 14px 14px 20px;
+  }
+
+  /* ─── Stat banner ────────────────── */
+  .stat-banner {
+    background: var(--navy);
+    border: 1px solid rgba(196,145,42,0.25);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+  }
+  .stat-banner-row {
+    display: flex;
+    align-items: center;
+  }
+  .stat-banner-item {
+    flex: 1;
+    text-align: center;
+  }
+  .stat-banner-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255,255,255,0.1);
+  }
+  .stat-val {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+  .stat-val.green { color: #4ade80; }
+  .stat-label-sm {
+    font-family: 'Oswald', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-top: 3px;
+  }
+
+  /* ─── Section heading ────────────── */
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    white-space: nowrap;
+  }
+  .sec-rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cream-deep), transparent);
+  }
+  .sec-badge {
+    font-family: 'Oswald', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 1px 6px;
+    white-space: nowrap;
+  }
+
+  /* ─── Leaderboard mini ───────────── */
+  .lb-mini-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+  .lb-mini-rank {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-light);
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .lb-mini-rank.gold { color: var(--gold); }
+  .lb-mini-rank.red { color: var(--red); }
+  .lb-mini-bar-wrap {
+    flex: 1;
+    height: 28px;
+    background: var(--cream-dark);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--cream-deep);
+  }
+  .lb-mini-bar {
+    position: absolute;
+    inset-y: 0; left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+  }
+  .lb-mini-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .lb-mini-you {
+    font-size: 7px;
+    font-family: 'Oswald', sans-serif;
+    background: rgba(255,255,255,0.25);
+    padding: 1px 4px;
+    margin-left: 4px;
+    color: #fff;
+  }
+  .lb-mini-pts {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+  }
+
+  /* ─── Game Card (mobile) ─────────── */
+  .game-card {
+    background: var(--parchment);
+    border: 1px solid var(--cream-deep);
+    box-shadow: 2px 2px 0 var(--cream-deep);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .game-card-tape {
+    height: 5px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--navy) 0, var(--navy) 14px,
+      var(--red) 14px, var(--red) 28px
+    );
+  }
+  .game-card-time {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    text-align: center;
+    padding: 7px;
+    border-bottom: 1px solid var(--cream-deep);
+    background: rgba(255,255,255,0.3);
+  }
+  .game-card-body { padding: 12px; }
+  .game-teams-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .game-team-mob {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .team-circle {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+  .team-abbr-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.05em;
+  }
+  .game-at {
+    font-family: 'Playfair Display', serif;
+    font-size: 10px;
+    font-style: italic;
+    color: var(--ink-light);
+    flex-shrink: 0;
+  }
+  /* Pick button grid */
+  .pick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--cream-deep);
+  }
+  .pick-btn-mob {
+    border: 1.5px solid;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .pick-btn-mob.picked { color: #fff !important; }
+  .pick-type-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 7px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: block;
+    opacity: 0.7;
+  }
+  .pick-val-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    display: block;
+    margin-top: 1px;
+  }
+
+  /* ─── Score display (graded) ─────── */
+  .score-display {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: center;
+  }
+  .result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+  }
+  .result-badge.win { background: var(--green); color: #fff; }
+  .result-badge.loss { background: var(--red); color: #fff; }
+
+  /* ─── Submit bar ─────────────────── */
+  .submit-bar-mob {
+    background: var(--navy);
+    border: 1.5px solid var(--gold);
+    padding: 14px 16px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative;
+  }
+  .submit-bar-mob::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--gold);
+  }
+  .submit-bar-text-mob {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .submit-bar-sub-mob {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 9px;
+    font-style: italic;
+    color: rgba(255,255,255,0.4);
+    margin-top: 2px;
+  }
+  .submit-btn-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: var(--gold);
+    border: none;
+    padding: 9px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    flex-shrink: 0;
+  }
+
+  /* ─── Login screen ───────────────── */
+  .login-screen-mob {
+    flex: 1;
+    background: var(--navy);
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent, transparent 29px,
+      rgba(255,255,255,0.025) 29px, rgba(255,255,255,0.025) 30px
+    );
+    display: flex;
+    flex-direction: column;
+    padding: 40px 24px 32px;
+  }
+  .login-logo-mob {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .login-eyebrow-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .login-wordmark-mob {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+    display: block;
+  }
+  .login-wordmark-mob span { color: var(--red); font-style: italic; }
+  .login-tagline-mob {
+    font-family: 'Special Elite', cursive;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 8px;
+    display: block;
+  }
+  .login-seam {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 20px 0;
+  }
+  .seam-line-mob { flex: 1; height: 1px; background: rgba(196,145,42,0.3); }
+  .seam-diamond-mob {
+    width: 5px; height: 5px;
+    background: var(--gold);
+    transform: rotate(45deg);
+    opacity: 0.5;
+  }
+  .login-form-mob {
+    background: var(--parchment);
+    padding: 22px 20px;
+    position: relative;
+    border-top: 3px solid var(--gold);
+  }
+  .login-form-mob::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid var(--cream-deep);
+    pointer-events: none;
+    opacity: 0.4;
+  }
+  .form-title-mob {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 3px;
+  }
+  .form-sub-mob {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 10px;
+    font-style: italic;
+    color: var(--ink-light);
+    margin-bottom: 18px;
+  }
+  .form-lbl-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .form-input-mob {
+    width: 100%;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid var(--cream-deep);
+    border-bottom: 2px solid var(--navy);
+    font-family: 'Libre Baskerville', serif;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    outline: none;
+  }
+  .form-btn-mob {
+    width: 100%;
+    padding: 13px;
+    background: var(--navy);
+    color: #fff;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    margin-top: 4px;
+  }
+  .form-btn-mob::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--red);
+  }
+  .form-link-mob {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 10px;
+    font-style: italic;
+    color: var(--ink-light);
+    text-align: center;
+    margin-top: 14px;
+  }
+  .form-link-mob a { color: var(--red); text-decoration: none; }
+  .forgot-link-mob {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 10px;
+    font-style: italic;
+    color: var(--red);
+    text-align: right;
+    margin-top: -10px;
+    margin-bottom: 12px;
+  }
+
+  /* ─── Leaderboard screen ─────────── */
+  .lb-full-head-mob {
+    text-align: center;
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--cream-deep);
+    margin-bottom: 16px;
+  }
+  .lb-page-title-mob {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .lb-page-sub-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-top: 4px;
+  }
+  .lb-filter-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .lb-filter-btn {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: 1px solid;
+    background: transparent;
+    cursor: pointer;
+  }
+  .lb-filter-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .lb-filter-btn:not(.active) { color: var(--ink-mid); border-color: var(--cream-deep); }
+  .lb-table-mob {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .lb-table-mob th {
+    font-family: 'Oswald', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1.5px solid var(--navy);
+  }
+  .lb-table-mob th:last-child { text-align: right; }
+  .lb-table-mob td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--cream-deep);
+    vertical-align: middle;
+  }
+  .lb-table-mob tr.me-row { background: rgba(196,30,58,0.05); outline: 1.5px solid var(--red); outline-offset: -1px; }
+  .lb-rank-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-light);
+    text-align: center;
+  }
+  .lb-rank-mob.gold { color: var(--gold); }
+  .lb-rank-mob.red { color: var(--red); }
+  .lb-user-mob {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .color-pip {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+  .lb-username-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--navy);
+  }
+  .lb-you-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--red);
+    border: 1px solid var(--red);
+    padding: 0 4px;
+    line-height: 14px;
+  }
+  .lb-record-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    color: var(--ink-mid);
+  }
+  .lb-pts-mob {
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: right;
+  }
+  .lb-pts-unit-mob {
+    font-size: 8px;
+    font-weight: 400;
+    color: var(--ink-light);
+    letter-spacing: 0.08em;
+  }
+
+  /* ─── Profile screen ─────────────── */
+  .profile-hero {
+    background: var(--navy);
+    padding: 24px 20px 20px;
+    text-align: center;
+    position: relative;
+    border-bottom: 3px solid var(--gold);
+  }
+  .profile-avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 3px solid var(--gold);
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #fff;
+  }
+  .profile-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .profile-joined {
+    font-family: 'Special Elite', cursive;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 3px;
+  }
+  .profile-rank-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(196,145,42,0.15);
+    border: 1px solid var(--gold);
+    padding: 4px 12px;
+    margin-top: 10px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold-light);
+    letter-spacing: 0.1em;
+  }
+  .profile-stat-row {
+    display: flex;
+    background: var(--cream-dark);
+    border-bottom: 1px solid var(--cream-deep);
+  }
+  .profile-stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 14px 8px;
+    border-right: 1px solid var(--cream-deep);
+  }
+  .profile-stat-item:last-child { border-right: none; }
+  .profile-stat-val {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .profile-stat-lbl {
+    font-family: 'Oswald', sans-serif;
+    font-size: 7px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-top: 3px;
+  }
+  .profile-section {
+    padding: 14px;
+  }
+  .profile-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--cream-deep);
+  }
+  .profile-menu-item:last-child { border-bottom: none; }
+  .profile-menu-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--navy);
+  }
+  .profile-menu-val {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--ink-light);
+  }
+  .profile-logout-btn {
+    width: calc(100% - 28px);
+    margin: 4px 14px 14px;
+    padding: 12px;
+    background: transparent;
+    border: 1.5px solid var(--red);
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--red);
+    cursor: pointer;
+    text-align: center;
+  }
+
+  /* ─── Screen: visible toggle ─────── */
+  .pscreen { display: none; }
+  .pscreen.active { display: flex; }
+
+  /* ─── Vintage card ───────────────── */
+  .vintage-card-mob {
+    background: var(--parchment);
+    border: 1px solid var(--cream-deep);
+    box-shadow: 2px 2px 0 var(--cream-deep);
+    padding: 14px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">Mobile Design Preview · React Native / Expo</div>
+  <div class="page-wordmark">MLB<span>162</span></div>
+</div>
+
+<div class="selector">
+  <button class="sel-btn active" onclick="showPhones('auth')">Auth Screens</button>
+  <button class="sel-btn" onclick="showPhones('dash')">Dashboard</button>
+  <button class="sel-btn" onclick="showPhones('lb')">Leaderboard</button>
+  <button class="sel-btn" onclick="showPhones('profile')">Profile</button>
+</div>
+
+
+<!-- ═══════════════ AUTH PHONES ═══════════════ -->
+<div class="phones-row pscreen active" id="phones-auth">
+
+  <!-- Login -->
+  <div class="phone-wrap">
+    <div class="phone-label">Login</div>
+    <div class="phone-frame">
+      <div class="phone-inner">
+        <div class="phone-screen active" id="p-login" style="flex-direction:column;">
+          <!-- Status bar -->
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <span class="status-icons">▲▲▲ ▮▮▮</span>
+          </div>
+          <!-- Login content -->
+          <div class="login-screen-mob" style="flex:1;overflow-y:auto;scrollbar-width:none;">
+            <div class="login-logo-mob">
+              <span class="login-eyebrow-mob">Daily Picker Game</span>
+              <span class="login-wordmark-mob">MLB<span>162</span></span>
+              <span class="login-tagline-mob">"Pick 'em every day of the season"</span>
+              <div class="login-seam">
+                <div class="seam-line-mob"></div>
+                <div class="seam-diamond-mob"></div>
+                <div class="seam-line-mob"></div>
+              </div>
+            </div>
+
+            <div class="login-form-mob">
+              <div class="form-title-mob">Sign In</div>
+              <div class="form-sub-mob">Good to see you back in the dugout.</div>
+              <label class="form-lbl-mob">Email Address</label>
+              <div class="form-input-mob" style="color:#9ca3af;font-size:12px;">you@example.com</div>
+              <label class="form-lbl-mob">Password</label>
+              <div class="form-input-mob" style="color:#9ca3af;font-size:12px;">••••••••</div>
+              <div class="forgot-link-mob">Forgot password?</div>
+              <div class="form-btn-mob">Step Up to the Plate →</div>
+              <div class="form-link-mob">New here? <a href="#">Create a free account</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register -->
+  <div class="phone-wrap">
+    <div class="phone-label">Register</div>
+    <div class="phone-frame">
+      <div class="phone-inner">
+        <div class="phone-screen active" style="flex-direction:column;">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <span class="status-icons">▲▲▲ ▮▮▮</span>
+          </div>
+          <div class="login-screen-mob" style="flex:1;overflow-y:auto;scrollbar-width:none;">
+            <div class="login-logo-mob" style="margin-bottom:24px;">
+              <span class="login-eyebrow-mob">Join the Game</span>
+              <span class="login-wordmark-mob">MLB<span>162</span></span>
+              <span class="login-tagline-mob">"A full season starts here"</span>
+              <div class="login-seam">
+                <div class="seam-line-mob"></div>
+                <div class="seam-diamond-mob"></div>
+                <div class="seam-line-mob"></div>
+              </div>
+            </div>
+
+            <div class="login-form-mob">
+              <div class="form-title-mob">Create Account</div>
+              <div class="form-sub-mob">Rookie or veteran — everyone starts at zero.</div>
+              <label class="form-lbl-mob">Username</label>
+              <div class="form-input-mob" style="color:#9ca3af;font-size:12px;">YourPickerName</div>
+              <label class="form-lbl-mob">Email Address</label>
+              <div class="form-input-mob" style="color:#9ca3af;font-size:12px;">you@example.com</div>
+              <label class="form-lbl-mob">Password</label>
+              <div class="form-input-mob" style="color:#9ca3af;font-size:12px;">••••••••</div>
+              <div class="form-btn-mob">Join the Season →</div>
+              <div class="form-link-mob" style="margin-top:12px;">Already have an account? <a href="#">Sign in</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════ DASHBOARD PHONES ═══════════════ -->
+<div class="phones-row pscreen" id="phones-dash">
+
+  <!-- Dashboard - Stats + Picks -->
+  <div class="phone-wrap">
+    <div class="phone-label">Dashboard — Top</div>
+    <div class="phone-frame">
+      <div class="phone-inner">
+        <div class="phone-screen active" style="flex-direction:column;">
+          <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ▮▮▮</span></div>
+          <div class="app-bar">
+            <div>
+              <div class="app-bar-logo">MLB<span>162</span></div>
+            </div>
+            <div class="app-bar-right">
+              <span class="app-bar-date">Mar 26</span>
+              <span class="app-bar-badge">2026</span>
+            </div>
+          </div>
+          <div class="screen-content pinstripe">
+            <div class="scroll-body">
+
+              <!-- Stats Banner -->
+              <div class="stat-banner">
+                <div class="stat-banner-row">
+                  <div class="stat-banner-item">
+                    <div class="stat-val">29-18</div>
+                    <div class="stat-label-sm">Moneyline</div>
+                  </div>
+                  <div class="stat-banner-divider"></div>
+                  <div class="stat-banner-item">
+                    <div class="stat-val">11-15</div>
+                    <div class="stat-label-sm">Spread</div>
+                  </div>
+                  <div class="stat-banner-divider"></div>
+                  <div class="stat-banner-item">
+                    <div class="stat-val green">62%</div>
+                    <div class="stat-label-sm">Win Rate</div>
+                  </div>
+                  <div class="stat-banner-divider"></div>
+                  <div class="stat-banner-item">
+                    <div class="stat-val">83</div>
+                    <div class="stat-label-sm">Points</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rank + Leaderboard preview -->
+              <div class="vintage-card-mob">
+                <div class="sec-head">
+                  <div class="sec-title">Standings</div>
+                  <div class="sec-rule"></div>
+                  <div class="sec-badge">Top 4</div>
+                </div>
+                <div class="lb-mini-row">
+                  <div class="lb-mini-rank gold">1</div>
+                  <div class="lb-mini-bar-wrap">
+                    <div class="lb-mini-bar" style="width:100%;background:linear-gradient(135deg,#1a4fa8,#0d1b4f);">
+                      <span class="lb-mini-name">ScottBaio4MVP</span>
+                      <span class="lb-mini-pts">102</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="lb-mini-row">
+                  <div class="lb-mini-rank gold">2</div>
+                  <div class="lb-mini-bar-wrap">
+                    <div class="lb-mini-bar" style="width:92%;background:linear-gradient(135deg,#2e6b3e,#1a4a28);">
+                      <span class="lb-mini-name">MikeTroutFan</span>
+                      <span class="lb-mini-pts">97</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="lb-mini-row">
+                  <div class="lb-mini-rank gold">3</div>
+                  <div class="lb-mini-bar-wrap">
+                    <div class="lb-mini-bar" style="width:85%;background:linear-gradient(135deg,#c4912a,#9e7220);">
+                      <span class="lb-mini-name">DiamondDave</span>
+                      <span class="lb-mini-pts">90</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="lb-mini-row">
+                  <div class="lb-mini-rank red">4</div>
+                  <div class="lb-mini-bar-wrap" style="outline:1.5px solid var(--red);outline-offset:-1.5px;">
+                    <div class="lb-mini-bar" style="width:78%;background:linear-gradient(135deg,var(--red),var(--red-dark));">
+                      <span class="lb-mini-name">Dalton <span class="lb-mini-you">YOU</span></span>
+                      <span class="lb-mini-pts">83</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Today's Games -->
+              <div class="sec-head" style="margin-top:6px;">
+                <div class="sec-title">Today's Games</div>
+                <div class="sec-rule"></div>
+                <div class="sec-badge">12 Games</div>
+              </div>
+
+              <!-- Game Card 1: No pick -->
+              <div class="game-card">
+                <div class="game-card-tape"></div>
+                <div class="game-card-time">7:05 PM ET</div>
+                <div class="game-card-body">
+                  <div class="game-teams-row">
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#003087;">NYY</div>
+                      <div class="team-abbr-mob">Yankees</div>
+                    </div>
+                    <div class="game-at">@</div>
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#C4120F;">BOS</div>
+                      <div class="team-abbr-mob">Red Sox</div>
+                    </div>
+                  </div>
+                  <div class="pick-grid">
+                    <div class="pick-btn-mob" style="border-color:#003087;color:#003087;">
+                      <span class="pick-type-label">Moneyline</span>
+                      <span class="pick-val-label">NYY</span>
+                    </div>
+                    <div class="pick-btn-mob" style="border-color:#C4120F;color:#C4120F;">
+                      <span class="pick-type-label">Moneyline</span>
+                      <span class="pick-val-label">BOS</span>
+                    </div>
+                    <div class="pick-btn-mob" style="border-color:#003087;color:#003087;">
+                      <span class="pick-type-label">Spread (2pts)</span>
+                      <span class="pick-val-label">NYY –1.5</span>
+                    </div>
+                    <div class="pick-btn-mob" style="border-color:#C4120F;color:#C4120F;">
+                      <span class="pick-type-label">Spread (2pts)</span>
+                      <span class="pick-val-label">BOS +1.5</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Game Card 2: Pick made -->
+              <div class="game-card">
+                <div class="game-card-tape"></div>
+                <div class="game-card-time">8:10 PM ET</div>
+                <div class="game-card-body">
+                  <div class="game-teams-row">
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#002D62;">HOU</div>
+                      <div class="team-abbr-mob">Astros</div>
+                    </div>
+                    <div class="game-at">@</div>
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#003087;">LAD</div>
+                      <div class="team-abbr-mob">Dodgers</div>
+                    </div>
+                  </div>
+                  <div class="pick-grid">
+                    <div class="pick-btn-mob picked" style="border-color:#002D62;background:#002D62;color:#fff;">
+                      <span class="pick-type-label" style="opacity:0.75;">✓ Your Pick</span>
+                      <span class="pick-val-label">HOU</span>
+                    </div>
+                    <div class="pick-btn-mob" style="border-color:#003087;color:#003087;">
+                      <span class="pick-type-label">Moneyline</span>
+                      <span class="pick-val-label">LAD</span>
+                    </div>
+                    <div class="pick-btn-mob" style="border-color:#002D62;color:#002D62;">
+                      <span class="pick-type-label">Spread (2pts)</span>
+                      <span class="pick-val-label">HOU +1.5</span>
+                    </div>
+                    <div class="pick-btn-mob" style="border-color:#003087;color:#003087;">
+                      <span class="pick-type-label">Spread (2pts)</span>
+                      <span class="pick-val-label">LAD –1.5</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submit Bar -->
+              <div class="submit-bar-mob">
+                <div>
+                  <div class="submit-bar-text-mob">1 of 12 picked</div>
+                  <div class="submit-bar-sub-mob">Picks lock at first pitch</div>
+                </div>
+                <div class="submit-btn-mob">Lock In</div>
+              </div>
+
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item active">
+              <span class="tab-icon">⚾</span>
+              <span class="tab-label" style="color:var(--gold-light);">Today</span>
+              <div class="tab-dot"></div>
+            </div>
+            <div class="tab-item">
+              <span class="tab-icon">🏆</span>
+              <span class="tab-label">Standings</span>
+            </div>
+            <div class="tab-item">
+              <span class="tab-icon">👥</span>
+              <span class="tab-label">Leagues</span>
+            </div>
+            <div class="tab-item">
+              <span class="tab-icon">👤</span>
+              <span class="tab-label">Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard - Graded results -->
+  <div class="phone-wrap">
+    <div class="phone-label">Dashboard — Graded</div>
+    <div class="phone-frame">
+      <div class="phone-inner">
+        <div class="phone-screen active" style="flex-direction:column;">
+          <div class="status-bar"><span class="status-time">7:22</span><span class="status-icons">▲▲▲ ▮▮▮</span></div>
+          <div class="app-bar">
+            <div class="app-bar-logo">MLB<span>162</span></div>
+            <div class="app-bar-right">
+              <span class="app-bar-date">Mar 25</span>
+              <span class="app-bar-badge">2026</span>
+            </div>
+          </div>
+          <div class="screen-content pinstripe">
+            <div class="scroll-body">
+
+              <div class="sec-head" style="margin-top:4px;">
+                <div class="sec-title">Yesterday's Results</div>
+                <div class="sec-rule"></div>
+                <div class="sec-badge">+5 pts</div>
+              </div>
+
+              <!-- Graded Win -->
+              <div class="game-card" style="outline:1.5px solid var(--green);outline-offset:-1.5px;">
+                <div class="game-card-tape" style="background:repeating-linear-gradient(90deg,var(--green) 0,var(--green) 14px,#1a4a28 14px,#1a4a28 28px);"></div>
+                <div class="game-card-time">🔒 Final · SEA 4 – CWS 2</div>
+                <div class="game-card-body">
+                  <div class="game-teams-row">
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#0C2C56;">SEA</div>
+                      <div class="team-abbr-mob">Mariners</div>
+                      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--navy);">4</div>
+                    </div>
+                    <div class="game-at" style="font-size:9px;color:var(--ink-light);">Final</div>
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#27251F;">CWS</div>
+                      <div class="team-abbr-mob">White Sox</div>
+                      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--ink-mid);">2</div>
+                    </div>
+                  </div>
+                  <div style="padding-top:10px;border-top:1px dashed var(--cream-deep);text-align:center;">
+                    <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-light);margin-bottom:5px;">Your Pick</div>
+                    <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:5px;">SEA Moneyline</div>
+                    <span class="result-badge win">✓ WIN · +1 pt</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Graded Loss -->
+              <div class="game-card" style="outline:1.5px solid var(--red);outline-offset:-1.5px;opacity:0.85;">
+                <div class="game-card-tape" style="background:repeating-linear-gradient(90deg,var(--red) 0,var(--red) 14px,var(--red-dark) 14px,var(--red-dark) 28px);"></div>
+                <div class="game-card-time">🔒 Final · ATL 3 – MIA 7</div>
+                <div class="game-card-body">
+                  <div class="game-teams-row">
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#CE1141;">ATL</div>
+                      <div class="team-abbr-mob">Braves</div>
+                      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--ink-mid);">3</div>
+                    </div>
+                    <div class="game-at" style="font-size:9px;color:var(--ink-light);">Final</div>
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#00A3E0;">MIA</div>
+                      <div class="team-abbr-mob">Marlins</div>
+                      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--navy);">7</div>
+                    </div>
+                  </div>
+                  <div style="padding-top:10px;border-top:1px dashed var(--cream-deep);text-align:center;">
+                    <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-light);margin-bottom:5px;">Your Pick</div>
+                    <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:5px;">ATL Spread –1.5</div>
+                    <span class="result-badge loss">✗ LOSS · –1 pt</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Spread Win -->
+              <div class="game-card" style="outline:1.5px solid var(--green);outline-offset:-1.5px;">
+                <div class="game-card-tape" style="background:repeating-linear-gradient(90deg,var(--green) 0,var(--green) 14px,#1a4a28 14px,#1a4a28 28px);"></div>
+                <div class="game-card-time">🔒 Final · LAD 6 – HOU 4</div>
+                <div class="game-card-body">
+                  <div class="game-teams-row">
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#002D62;">HOU</div>
+                      <div class="team-abbr-mob">Astros</div>
+                      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--ink-mid);">4</div>
+                    </div>
+                    <div class="game-at" style="font-size:9px;color:var(--ink-light);">Final</div>
+                    <div class="game-team-mob">
+                      <div class="team-circle" style="background:#003087;">LAD</div>
+                      <div class="team-abbr-mob">Dodgers</div>
+                      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--navy);">6</div>
+                    </div>
+                  </div>
+                  <div style="padding-top:10px;border-top:1px dashed var(--cream-deep);text-align:center;">
+                    <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-light);margin-bottom:5px;">Your Pick</div>
+                    <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:5px;">HOU +1.5 Spread</div>
+                    <span class="result-badge win">✓ WIN · +2 pts</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item active">
+              <span class="tab-icon">⚾</span>
+              <span class="tab-label" style="color:var(--gold-light);">Today</span>
+              <div class="tab-dot"></div>
+            </div>
+            <div class="tab-item"><span class="tab-icon">🏆</span><span class="tab-label">Standings</span></div>
+            <div class="tab-item"><span class="tab-icon">👥</span><span class="tab-label">Leagues</span></div>
+            <div class="tab-item"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════ LEADERBOARD PHONES ═══════════════ -->
+<div class="phones-row pscreen" id="phones-lb">
+
+  <div class="phone-wrap">
+    <div class="phone-label">Leaderboard</div>
+    <div class="phone-frame">
+      <div class="phone-inner">
+        <div class="phone-screen active" style="flex-direction:column;">
+          <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ▮▮▮</span></div>
+          <div class="app-bar">
+            <div class="app-bar-logo">MLB<span>162</span></div>
+            <div class="app-bar-right">
+              <span class="app-bar-date">Season</span>
+              <span class="app-bar-badge">2026</span>
+            </div>
+          </div>
+          <div class="screen-content pinstripe">
+            <div class="scroll-body">
+              <div class="lb-full-head-mob">
+                <div class="lb-page-title-mob">The Board</div>
+                <div class="lb-page-sub-mob">Through Game 22 · March 26</div>
+              </div>
+              <div class="lb-filter-row">
+                <button class="lb-filter-btn active">Season</button>
+                <button class="lb-filter-btn">This Week</button>
+                <button class="lb-filter-btn">Today</button>
+              </div>
+              <div class="vintage-card-mob" style="padding:0;overflow:hidden;">
+                <table class="lb-table-mob" style="width:100%;">
+                  <thead>
+                    <tr style="background:var(--cream-dark);">
+                      <th style="width:30px;text-align:center;">#</th>
+                      <th>Player</th>
+                      <th>W-L</th>
+                      <th style="text-align:right;">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><div class="lb-rank-mob gold">🥇</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:#1a4fa8;"></div>
+                          <span class="lb-username-mob">ScottBaio4MVP</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">34–15</span></td>
+                      <td><div class="lb-pts-mob">102<br><span class="lb-pts-unit-mob">pts</span></div></td>
+                    </tr>
+                    <tr>
+                      <td><div class="lb-rank-mob gold">🥈</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:#2e6b3e;"></div>
+                          <span class="lb-username-mob">MikeTroutFan</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">32–17</span></td>
+                      <td><div class="lb-pts-mob">97<br><span class="lb-pts-unit-mob">pts</span></div></td>
+                    </tr>
+                    <tr>
+                      <td><div class="lb-rank-mob gold">🥉</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:#c4912a;"></div>
+                          <span class="lb-username-mob">DiamondDave</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">30–18</span></td>
+                      <td><div class="lb-pts-mob">90<br><span class="lb-pts-unit-mob">pts</span></div></td>
+                    </tr>
+                    <tr class="me-row">
+                      <td><div class="lb-rank-mob red">4</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:var(--red);"></div>
+                          <span class="lb-username-mob">Dalton</span>
+                          <span class="lb-you-mob">YOU</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">29–18</span></td>
+                      <td><div class="lb-pts-mob" style="color:var(--red);">83<br><span class="lb-pts-unit-mob" style="color:var(--ink-light);">pts</span></div></td>
+                    </tr>
+                    <tr>
+                      <td><div class="lb-rank-mob">5</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:#5a3a8c;"></div>
+                          <span class="lb-username-mob">PurpleHaze99</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">25–22</span></td>
+                      <td><div class="lb-pts-mob">74<br><span class="lb-pts-unit-mob">pts</span></div></td>
+                    </tr>
+                    <tr>
+                      <td><div class="lb-rank-mob">6</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:#8B1A1A;"></div>
+                          <span class="lb-username-mob">TrueYankee</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">24–23</span></td>
+                      <td><div class="lb-pts-mob">68<br><span class="lb-pts-unit-mob">pts</span></div></td>
+                    </tr>
+                    <tr>
+                      <td><div class="lb-rank-mob">7</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:#006400;"></div>
+                          <span class="lb-username-mob">OaklandForever</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">23–24</span></td>
+                      <td><div class="lb-pts-mob">62<br><span class="lb-pts-unit-mob">pts</span></div></td>
+                    </tr>
+                    <tr>
+                      <td><div class="lb-rank-mob">8</div></td>
+                      <td>
+                        <div class="lb-user-mob">
+                          <div class="color-pip" style="background:#FF6600;"></div>
+                          <span class="lb-username-mob">BaltimoreRay</span>
+                        </div>
+                      </td>
+                      <td><span class="lb-record-mob">21–26</span></td>
+                      <td><div class="lb-pts-mob">55<br><span class="lb-pts-unit-mob">pts</span></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="text-align:center;margin-top:10px;">
+                <div style="font-family:'Special Elite',cursive;font-size:9px;color:var(--ink-light);">Updated nightly after all games final</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item"><span class="tab-icon">⚾</span><span class="tab-label">Today</span></div>
+            <div class="tab-item active">
+              <span class="tab-icon">🏆</span>
+              <span class="tab-label" style="color:var(--gold-light);">Standings</span>
+              <div class="tab-dot"></div>
+            </div>
+            <div class="tab-item"><span class="tab-icon">👥</span><span class="tab-label">Leagues</span></div>
+            <div class="tab-item"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════ PROFILE PHONES ═══════════════ -->
+<div class="phones-row pscreen" id="phones-profile">
+
+  <div class="phone-wrap">
+    <div class="phone-label">Profile</div>
+    <div class="phone-frame">
+      <div class="phone-inner">
+        <div class="phone-screen active" style="flex-direction:column;">
+          <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ▮▮▮</span></div>
+          <div class="screen-content">
+            <!-- Profile hero (no app bar — profile is the hero) -->
+            <div class="profile-hero">
+              <div class="profile-avatar">D</div>
+              <div class="profile-name">Dalton</div>
+              <div class="profile-joined">Joined March 2026 · Season 1</div>
+              <div class="profile-rank-pill">🏅 Ranked #4 of 24 players</div>
+            </div>
+
+            <!-- Stat grid -->
+            <div class="profile-stat-row">
+              <div class="profile-stat-item">
+                <div class="profile-stat-val">83</div>
+                <div class="profile-stat-lbl">Pts</div>
+              </div>
+              <div class="profile-stat-item">
+                <div class="profile-stat-val">29–18</div>
+                <div class="profile-stat-lbl">ML</div>
+              </div>
+              <div class="profile-stat-item">
+                <div class="profile-stat-val">11–15</div>
+                <div class="profile-stat-lbl">Spread</div>
+              </div>
+              <div class="profile-stat-item">
+                <div class="profile-stat-val">62%</div>
+                <div class="profile-stat-lbl">Win %</div>
+              </div>
+            </div>
+
+            <!-- Menu items -->
+            <div class="scroll-body">
+              <div class="sec-head" style="margin-top:4px;">
+                <div class="sec-title">Account</div>
+                <div class="sec-rule"></div>
+              </div>
+              <div class="vintage-card-mob" style="padding:0 14px;">
+                <div class="profile-menu-item">
+                  <span class="profile-menu-label">Email</span>
+                  <span class="profile-menu-val">dunn.dalton94@gmail.com</span>
+                </div>
+                <div class="profile-menu-item">
+                  <span class="profile-menu-label">Change Password</span>
+                  <span class="profile-menu-val">→</span>
+                </div>
+                <div class="profile-menu-item">
+                  <span class="profile-menu-label">Your Color</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <span style="width:16px;height:16px;background:var(--red);border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,0.2);"></span>
+                    <span class="profile-menu-val">Crimson</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="sec-head" style="margin-top:12px;">
+                <div class="sec-title">Leagues</div>
+                <div class="sec-rule"></div>
+              </div>
+              <div class="vintage-card-mob" style="padding:0 14px;">
+                <div class="profile-menu-item">
+                  <span class="profile-menu-label">The Boys League</span>
+                  <span class="profile-menu-val">Rank #2</span>
+                </div>
+                <div class="profile-menu-item">
+                  <span class="profile-menu-label">Join a League</span>
+                  <span class="profile-menu-val">→</span>
+                </div>
+                <div class="profile-menu-item">
+                  <span class="profile-menu-label">Create a League</span>
+                  <span class="profile-menu-val">→</span>
+                </div>
+              </div>
+
+              <div class="profile-logout-btn" style="display:block;text-align:center;margin-top:12px;">Sign Out</div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item"><span class="tab-icon">⚾</span><span class="tab-label">Today</span></div>
+            <div class="tab-item"><span class="tab-icon">🏆</span><span class="tab-label">Standings</span></div>
+            <div class="tab-item"><span class="tab-icon">👥</span><span class="tab-label">Leagues</span></div>
+            <div class="tab-item active">
+              <span class="tab-icon">👤</span>
+              <span class="tab-label" style="color:var(--gold-light);">Profile</span>
+              <div class="tab-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+  function showPhones(name) {
+    document.querySelectorAll('.pscreen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sel-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('phones-' + name).classList.add('active');
+    event.target.classList.add('active');
+    window.scrollTo({ top: 70, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>

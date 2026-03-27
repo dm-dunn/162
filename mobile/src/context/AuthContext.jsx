@@ -63,8 +63,13 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const changePassword = async (newPassword) => {
+    await authService.changePassword(newPassword);
+    setUser((prev) => ({ ...prev, mustChangePassword: false }));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, refreshUser, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, refreshUser, changePassword, loading }}>
       {children}
     </AuthContext.Provider>
   );

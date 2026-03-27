@@ -1,8 +1,28 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
-import { getTeamLogo, getTeamName, getTeamColor } from '../../utils/teamLogos';
+import { getTeamName, getTeamColor } from '../../utils/teamLogos';
+import { getLogoUri } from '../../services/logoCache';
 import api from '../../services/api';
 import { USE_MOCK_DATA } from '../../utils/mockData';
+
+const C = {
+  cream: '#F4E9D0',
+  creamDark: '#E8D9B8',
+  creamDeep: '#D4C098',
+  parchment: '#F9F3E3',
+  red: '#C41E3A',
+  redDark: '#9E1730',
+  navy: '#0D1B4F',
+  navyMid: '#1A2F6E',
+  gold: '#C4912A',
+  goldLight: '#E8B84B',
+  brown: '#3D2112',
+  ink: '#1A0F08',
+  inkMid: '#4A3728',
+  inkLight: '#7A6050',
+  green: '#2E6B3E',
+  white: '#FFFFFF',
+};
 
 export default function GameCard({ game, existingPick, onPickMade, submitted }) {
   const [loading, setLoading] = useState(false);
@@ -69,16 +89,22 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
     const teamColor = getTeamColor(abbr);
     const mlPicked = isPicked(side, 'moneyline');
     const sprPicked = isPicked(side, 'spread');
-    const pickedBgColor = pickResult === 'win' ? '#16a34a' : pickResult === 'loss' ? '#dc2626' : teamColor;
+    const pickedBgColor = pickResult === 'win' ? C.green : pickResult === 'loss' ? C.red : teamColor;
 
     return (
       <View style={styles.teamSection}>
         <View style={styles.logoWrapper}>
-          <Image
-            source={{ uri: getTeamLogo(abbr) }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          {getLogoUri(abbr) ? (
+            <Image
+              source={{ uri: getLogoUri(abbr) }}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={[styles.logo, styles.logoPlaceholder]}>
+              <Text style={styles.logoPlaceholderText}>{abbr}</Text>
+            </View>
+          )}
         </View>
         <Text style={styles.teamAbbr}>{abbr}</Text>
         {score !== null && <Text style={styles.score}>{score}</Text>}
@@ -92,12 +118,13 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
             styles.pickBtn,
             mlPicked
               ? { backgroundColor: pickedBgColor, borderColor: pickedBgColor }
-              : { backgroundColor: 'transparent', borderColor: teamColor + '60' },
+              : { backgroundColor: C.white, borderColor: teamColor },
             isLocked && styles.pickBtnLocked,
           ]}
         >
-          <Text style={[styles.pickBtnText, { color: mlPicked ? '#fff' : teamColor }]}>
-            {mlPicked && pickResult ? (pickResult === 'win' ? '✅ ' : '❌ ') : ''}ML
+          <Text style={styles.pickBtnLabel}>ML</Text>
+          <Text style={[styles.pickBtnValue, { color: mlPicked ? C.white : teamColor }]}>
+            {mlPicked && pickResult ? (pickResult === 'win' ? '✓' : '✗') : abbr.slice(0, 2)}
           </Text>
         </TouchableOpacity>
 
@@ -110,12 +137,13 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
             styles.pickBtn,
             sprPicked
               ? { backgroundColor: pickedBgColor, borderColor: pickedBgColor }
-              : { backgroundColor: 'transparent', borderColor: teamColor + '60' },
+              : { backgroundColor: C.white, borderColor: teamColor },
             isLocked && styles.pickBtnLocked,
           ]}
         >
-          <Text style={[styles.pickBtnText, { color: sprPicked ? '#fff' : teamColor }]}>
-            {sprPicked && pickResult ? (pickResult === 'win' ? '✅ ' : '❌ ') : ''}{getSpreadDisplay(side) || 'SPR'}
+          <Text style={styles.pickBtnLabel}>SPR</Text>
+          <Text style={[styles.pickBtnValue, { color: sprPicked ? C.white : teamColor }]}>
+            {sprPicked && pickResult ? (pickResult === 'win' ? '✓' : '✗') : getSpreadDisplay(side) || '—'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -139,7 +167,7 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
             {awayP ? (
               <>
                 <View style={styles.pitcherNameRow}>
-                  <View style={[styles.handBadge, { backgroundColor: '#f3f4f6' }]}>
+                  <View style={[styles.handBadge, { backgroundColor: C.cream }]}>
                     <Text style={styles.handBadgeText}>{awayP.hand}</Text>
                   </View>
                   <Text style={styles.pitcherName} numberOfLines={1}>{awayP.name}</Text>
@@ -159,7 +187,7 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
               <>
                 <View style={styles.pitcherNameRow}>
                   <Text style={styles.pitcherName} numberOfLines={1}>{homeP.name}</Text>
-                  <View style={[styles.handBadge, { backgroundColor: '#f3f4f6' }]}>
+                  <View style={[styles.handBadge, { backgroundColor: C.cream }]}>
                     <Text style={styles.handBadgeText}>{homeP.hand}</Text>
                   </View>
                 </View>
@@ -185,7 +213,7 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
       case 'questionable':
         return { bg: '#fffbeb', text: '#d97706', label: 'GTD' };
       default:
-        return { bg: '#f3f4f6', text: '#6b7280', label: status };
+        return { bg: C.cream, text: C.ink, label: status };
     }
   };
 
@@ -280,12 +308,15 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
       pickResult === 'loss' && styles.cardLoss,
       hasPick && !pickResult && styles.cardPicked,
     ]}>
+      {/* Tape strip */}
+      <View style={styles.tapeStrip} />
+
       {/* Time row */}
       <View style={styles.timeRow}>
         <Text style={styles.gameTime}>{formatTime(gameTime)}</Text>
-        {isLocked && !pickResult && <Text style={styles.lockBadge}>LOCKED</Text>}
-        {pickResult === 'win'  && <Text style={styles.winBadge}>WIN</Text>}
-        {pickResult === 'loss' && <Text style={styles.loseBadge}>LOSE</Text>}
+        {isLocked && !pickResult && <Text style={styles.lockBadge}>🔒 LOCKED</Text>}
+        {pickResult === 'win'  && <Text style={styles.winBadge}>✓ WIN</Text>}
+        {pickResult === 'loss' && <Text style={styles.loseBadge}>✗ LOSS</Text>}
         {hasPick && !pickResult && !isLocked && <Text style={styles.pickedBadge}>PICKED</Text>}
       </View>
 
@@ -295,19 +326,31 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
         </View>
       ) : null}
 
-      <View style={styles.matchup}>
-        {renderTeamSection('away')}
-
-        <View style={styles.vsContainer}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#FF0000" />
-          ) : (
-            <Text style={styles.vs}>@</Text>
-          )}
+      {/* Result badge (if graded) */}
+      {pickResult && (
+        <View style={[styles.resultBadge, pickResult === 'win' ? styles.resultWin : styles.resultLoss]}>
+          <Text style={styles.resultText}>
+            {pickResult === 'win' ? '✓ WIN +2 pts' : '✗ LOSS –1 pt'}
+          </Text>
         </View>
+      )}
 
-        {renderTeamSection('home')}
-      </View>
+      {/* Matchup */}
+      {!pickResult && (
+        <View style={styles.matchup}>
+          {renderTeamSection('away')}
+
+          <View style={styles.vsContainer}>
+            {loading ? (
+              <ActivityIndicator size="small" color={C.red} />
+            ) : (
+              <Text style={styles.vs}>@</Text>
+            )}
+          </View>
+
+          {renderTeamSection('home')}
+        </View>
+      )}
 
       {renderPitchers()}
       {renderInjuries()}
@@ -317,168 +360,232 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
+    backgroundColor: C.parchment,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
+    borderColor: C.creamDeep,
+    shadowColor: C.creamDeep,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+    marginBottom: 12,
+    marginHorizontal: 0,
+    overflow: 'hidden',
   },
   cardPicked: {
-    borderColor: '#c7d2fe',
-    shadowColor: '#000080',
-    shadowOpacity: 0.15,
+    borderColor: C.gold,
+    shadowColor: C.gold,
   },
   cardWin: {
-    borderColor: '#16a34a',
-    borderWidth: 2.5,
-    shadowColor: '#14532d',
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
+    borderColor: C.green,
+    borderWidth: 1.5,
+    shadowColor: C.green,
   },
   cardLoss: {
-    borderColor: '#dc2626',
-    borderWidth: 2.5,
-    shadowColor: '#7f1d1d',
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
+    borderColor: C.red,
+    borderWidth: 1.5,
+    shadowColor: C.red,
   },
+
+  tapeStrip: {
+    height: 5,
+    backgroundColor: C.navy,
+    width: '100%',
+  },
+
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderBottomWidth: 1,
+    borderBottomColor: C.creamDeep,
   },
   gameTime: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontSize: 8,
+    color: C.inkLight,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   lockBadge: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '800',
-    color: '#6b7280',
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    color: C.inkLight,
+    backgroundColor: C.cream,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 2,
     letterSpacing: 1,
   },
   pickedBadge: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '800',
-    color: '#16a34a',
-    backgroundColor: '#f0fdf4',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    color: C.green,
+    backgroundColor: C.cream,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 2,
     letterSpacing: 1,
   },
   winBadge: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '800',
-    color: '#fff',
-    backgroundColor: '#16a34a',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    color: C.white,
+    backgroundColor: C.green,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 2,
     letterSpacing: 1,
   },
   loseBadge: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '800',
-    color: '#fff',
-    backgroundColor: '#dc2626',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    color: C.white,
+    backgroundColor: C.red,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 2,
     letterSpacing: 1,
   },
+
+  resultBadge: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 3,
+    alignItems: 'center',
+  },
+  resultWin: {
+    backgroundColor: C.green,
+  },
+  resultLoss: {
+    backgroundColor: C.red,
+  },
+  resultText: {
+    color: C.white,
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+
   errorBox: {
     backgroundColor: '#fef2f2',
-    borderRadius: 8,
+    borderRadius: 3,
     padding: 8,
-    marginBottom: 10,
+    marginHorizontal: 12,
+    marginTop: 8,
     borderWidth: 1,
     borderColor: '#fecaca',
   },
-  errorText: { color: '#dc2626', fontSize: 12, textAlign: 'center' },
+  errorText: { color: '#dc2626', fontSize: 11, textAlign: 'center' },
+
   matchup: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
   },
   teamSection: {
     flex: 1,
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   logoWrapper: {
     padding: 4,
   },
   logo: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
+  },
+  logoPlaceholder: {
+    backgroundColor: C.creamDark,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoPlaceholderText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: C.navy,
+    letterSpacing: 1,
   },
   teamAbbr: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '900',
-    color: '#111827',
+    color: C.ink,
     letterSpacing: 1,
   },
   score: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '900',
-    color: '#111827',
+    color: C.ink,
   },
+
   pickBtn: {
     width: '90%',
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 2,
     borderWidth: 1.5,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
   },
-  pickBtnLocked: { opacity: 0.4 },
-  pickBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
+  pickBtnLocked: { opacity: 0.7 },
+  pickBtnLabel: {
+    fontSize: 7,
+    fontWeight: '700',
+    color: C.ink,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  pickBtnValue: {
+    fontSize: 12,
+    fontWeight: '900',
     letterSpacing: 0.5,
   },
+
   vsContainer: {
-    width: 36,
+    width: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   vs: {
-    color: '#d1d5db',
-    fontWeight: '800',
-    fontSize: 18,
+    color: C.inkLight,
+    fontWeight: '700',
+    fontSize: 16,
+    fontStyle: 'italic',
   },
 
   // Shared section styles
   sectionDivider: {
     height: 1,
-    backgroundColor: '#f3f4f6',
-    marginBottom: 12,
-    marginTop: 14,
+    backgroundColor: C.creamDeep,
+    marginBottom: 10,
+    marginTop: 10,
+    marginHorizontal: 12,
   },
   sectionLabel: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
-    color: '#9ca3af',
+    color: C.inkLight,
     letterSpacing: 1.5,
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
 
   // Pitchers
-  pitchersSection: {},
+  pitchersSection: {
+    paddingHorizontal: 12,
+  },
   pitchersRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -498,43 +605,47 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   pitcherName: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#111827',
+    color: C.ink,
     flexShrink: 1,
   },
   handBadge: {
-    borderRadius: 4,
-    paddingHorizontal: 5,
+    borderRadius: 2,
+    paddingHorizontal: 4,
     paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: C.creamDeep,
   },
   handBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
-    color: '#374151',
+    color: C.ink,
   },
   pitcherStats: {
-    fontSize: 11,
-    color: '#9ca3af',
+    fontSize: 10,
+    color: C.inkLight,
     marginTop: 2,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   pitcherTBD: {
-    fontSize: 12,
-    color: '#d1d5db',
+    fontSize: 11,
+    color: C.creamDeep,
     fontStyle: 'italic',
     fontWeight: '600',
   },
   pitcherVsDivider: {
     width: 1,
     height: 36,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: C.creamDeep,
     marginHorizontal: 10,
     alignSelf: 'center',
   },
 
   // Injuries
-  injuriesSection: {},
+  injuriesSection: {
+    paddingHorizontal: 12,
+  },
   injuriesToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -542,17 +653,17 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   injuriesToggleText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    color: '#d97706',
+    color: C.red,
   },
   injuriesChevron: {
-    fontSize: 11,
-    color: '#9ca3af',
+    fontSize: 10,
+    color: C.inkLight,
     fontWeight: '700',
   },
   injuriesExpanded: {
-    marginTop: 10,
+    marginTop: 8,
   },
   injuriesColumns: {
     flexDirection: 'row',
@@ -562,23 +673,24 @@ const styles = StyleSheet.create({
   },
   injuryColumnDivider: {
     width: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: C.creamDeep,
     marginHorizontal: 10,
   },
   injuryTeamLabel: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
-    color: '#9ca3af',
+    color: C.inkLight,
     letterSpacing: 1.5,
     marginBottom: 6,
+    textTransform: 'uppercase',
   },
   injuryNone: {
-    fontSize: 11,
-    color: '#d1d5db',
+    fontSize: 10,
+    color: C.creamDeep,
     fontStyle: 'italic',
   },
   injuryPlayer: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   injuryPlayerRow: {
     flexDirection: 'row',
@@ -587,35 +699,35 @@ const styles = StyleSheet.create({
     flexWrap: 'nowrap',
   },
   injuryPlayerName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#374151',
+    color: C.ink,
     flexShrink: 1,
   },
   injuryPosition: {
-    fontSize: 10,
-    color: '#9ca3af',
+    fontSize: 9,
+    color: C.inkLight,
     fontWeight: '600',
   },
   injuryBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     marginTop: 2,
   },
   statusBadge: {
-    borderRadius: 4,
-    paddingHorizontal: 5,
+    borderRadius: 2,
+    paddingHorizontal: 4,
     paddingVertical: 2,
   },
   statusBadgeText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   injuryNote: {
-    fontSize: 10,
-    color: '#9ca3af',
+    fontSize: 9,
+    color: C.inkLight,
     flexShrink: 1,
   },
 });

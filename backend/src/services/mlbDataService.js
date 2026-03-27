@@ -2,40 +2,107 @@ const { getSchedule, getGameDetails, batchGetGames } = require('../config/mlb-ap
 const { Game } = require('../models');
 const CacheService = require('./cacheService');
 
+// Authoritative team name → MLB abbreviation lookup.
+// Used as a fallback when the MLB Stats API doesn't return an abbreviation field.
+const TEAM_NAME_TO_ABBR = {
+    'Baltimore Orioles':      'BAL',
+    'Boston Red Sox':         'BOS',
+    'New York Yankees':       'NYY',
+    'Tampa Bay Rays':         'TB',
+    'Toronto Blue Jays':      'TOR',
+    'Chicago White Sox':      'CWS',
+    'Cleveland Guardians':    'CLE',
+    'Detroit Tigers':         'DET',
+    'Kansas City Royals':     'KC',
+    'Minnesota Twins':        'MIN',
+    'Houston Astros':         'HOU',
+    'Los Angeles Angels':     'LAA',
+    'Athletics':              'ATH',   // 2025+ Las Vegas / Sacramento era
+    'Oakland Athletics':      'ATH',   // legacy name still seen in some API responses
+    'Seattle Mariners':       'SEA',
+    'Texas Rangers':          'TEX',
+    'Atlanta Braves':         'ATL',
+    'Miami Marlins':          'MIA',
+    'New York Mets':          'NYM',
+    'Philadelphia Phillies':  'PHI',
+    'Washington Nationals':   'WSH',
+    'Chicago Cubs':           'CHC',
+    'Cincinnati Reds':        'CIN',
+    'Milwaukee Brewers':      'MIL',
+    'Pittsburgh Pirates':     'PIT',
+    'St. Louis Cardinals':    'STL',
+    'Arizona Diamondbacks':   'ARI',
+    'Colorado Rockies':       'COL',
+    'Los Angeles Dodgers':    'LAD',
+    'San Diego Padres':       'SD',
+    'San Francisco Giants':   'SF',
+};
+
+/**
+ * Resolves a team abbreviation from the MLB Stats API game object.
+ * Prefers the API's own `abbreviation` field; falls back to the full
+ * team name lookup; last-resort is the first 3 chars (better than nothing).
+ */
+function resolveAbbr(teamObj) {
+    const abbr = teamObj?.abbreviation;
+    if (abbr && abbr.trim()) return abbr.trim().toUpperCase();
+    const name = teamObj?.name || '';
+    if (TEAM_NAME_TO_ABBR[name]) return TEAM_NAME_TO_ABBR[name];
+    return name.substring(0, 3).toUpperCase();
+}
+
 class MLBDataService {
     static async fetchDailyGames(date) {
-        const cacheKey = `schedule:${date.toISOString().split('T')[0]}`;
-        
-        // Check cache
+        const dateStr = date.toISOString().split('T')[0];
+        const cacheKey = `schedule:${dateStr}`;
+
+        // Check cache — a cache hit means we already wrote to the DB today;
+        // return the cached list rather than hitting the API again.
         const cached = await CacheService.get(cacheKey);
         if (cached) return cached;
 
-        // Fetch from API
-        const schedule = await getSchedule(date);
-        const games = [];
+        let games = [];
 
-        if (schedule.dates && schedule.dates[0] && schedule.dates[0].games) {
-            for (const game of schedule.dates[0].games) {
-                const gameData = {
-                    externalGameId: game.gamePk.toString(),
-                    gameDate: date.toISOString().split('T')[0],
-                    gameTime: new Date(game.gameDate),
-                    homeTeam: game.teams.home.team.name,
-                    awayTeam: game.teams.away.team.name,
-                    homeTeamAbbr: game.teams.home.team.abbreviation || game.teams.home.team.name.substring(0, 3).toUpperCase(),
-                    awayTeamAbbr: game.teams.away.team.abbreviation || game.teams.away.team.name.substring(0, 3).toUpperCase(),
-                    venue: game.venue ? game.venue.name : 'TBD',
-                    spread: 1.5 // Default spread, could be enhanced
-                };
+        try {
+            // Fetch from MLB Stats API
+            const schedule = await getSchedule(date);
 
-                // Save to database
-                const savedGame = await Game.create(gameData);
-                games.push(savedGame);
+            if (schedule.dates && schedule.dates[0] && schedule.dates[0].games) {
+                for (const game of schedule.dates[0].games) {
+                    const gameData = {
+                        externalGameId: game.gamePk.toString(),
+                        gameDate: dateStr,
+                        gameTime: new Date(game.gameDate),
+                        homeTeam: game.teams.home.team.name,
+                        awayTeam: game.teams.away.team.name,
+                        homeTeamAbbr: resolveAbbr(game.teams.home.team),
+                        awayTeamAbbr: resolveAbbr(game.teams.away.team),
+                        venue: game.venue ? game.venue.name : 'TBD',
+                        spread: 1.5
+                    };
+
+                    const savedGame = await Game.create(gameData);
+                    games.push(savedGame);
+                }
             }
-        }
 
-        // Cache for 1 hour
-        await CacheService.set(cacheKey, games, 3600);
+            // Cache for 23 hours — a day's schedule doesn't change, so there's no
+            // reason to re-fetch it every hour. The lineup-update job (every 30 min)
+            // handles pitcher/lineup changes separately via updateLineups().
+            await CacheService.set(cacheKey, games, 82800);
+
+        } catch (apiError) {
+            // API call failed (network issue, MLB outage, etc.).
+            // Fall back to whatever is already in the DB for this date so the
+            // app still has data rather than returning nothing.
+            const logger = require('../config/logger');
+            logger.error('MLB API fetch failed, falling back to DB', { date: dateStr, message: apiError.message });
+
+            games = await Game.findByDate(dateStr);
+
+            // If DB also has nothing, re-throw so callers know the fetch truly failed.
+            if (games.length === 0) throw apiError;
+        }
 
         return games;
     }

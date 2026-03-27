@@ -1,13 +1,42 @@
 const express = require('express');
 const { Game } = require('../models');
 const { authenticate } = require('../middleware/auth');
+const MLBDataService = require('../services/mlbDataService');
+const CacheService = require('../services/cacheService');
+const logger = require('../config/logger');
 
 const router = express.Router();
 
 router.get('/today', authenticate, async (req, res, next) => {
     try {
         const today = new Date().toISOString().split('T')[0];
-        const games = await Game.findByDate(today);
+        let games = await Game.findByDate(today);
+
+        // Self-healing: if the DB has no games for today, try to pull them
+        // from the MLB API right now. A per-day lock (1-hour TTL) prevents
+        // hammering the API when there genuinely are no games (spring training,
+        // off days, etc.). The lock resets hourly so a transient API failure
+        // will be retried automatically.
+        if (games.length === 0) {
+            const fetchLockKey = `auto_fetch_lock:${today}`;
+            const alreadyAttempted = await CacheService.get(fetchLockKey);
+
+            if (!alreadyAttempted) {
+                // Claim the lock before the async call so parallel requests
+                // don't all race to fetch simultaneously.
+                await CacheService.set(fetchLockKey, true, 3600); // 1-hour lock
+
+                try {
+                    logger.info(`No games in DB for ${today} — attempting auto-fetch from MLB API`);
+                    games = await MLBDataService.fetchDailyGames(new Date());
+                    logger.info(`Auto-fetch returned ${games.length} game(s) for ${today}`);
+                } catch (fetchError) {
+                    // API down or no games today — return empty array, don't blow up.
+                    logger.warn('Auto-fetch from MLB API failed', { message: fetchError.message });
+                }
+            }
+        }
+
         res.json({ games });
     } catch (error) {
         next(error);

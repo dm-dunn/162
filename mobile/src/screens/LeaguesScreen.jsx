@@ -92,28 +92,30 @@ export default function LeaguesScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
-      {/* Header Card */}
-      <View style={styles.card}>
-        <Text style={styles.title}>My Leagues</Text>
-        <Text style={styles.subtitle}>Compete with friends in private leagues</Text>
+      {/* Header Card — Navy bar with title */}
+      <View style={styles.headerSection}>
+        <Text style={styles.headerTitle}>My Leagues</Text>
+        <Text style={styles.headerSubtitle}>Compete with friends all season</Text>
         <View style={styles.headerBtns}>
           <TouchableOpacity
-            style={[showCreate ? styles.btnSecondary : styles.btn, styles.headerBtnHalf]}
+            style={[showCreate ? styles.btnInverted : styles.btnPrimary, styles.headerBtnHalf]}
             onPress={() => { setShowCreate(!showCreate); setShowJoin(false); }}
             activeOpacity={0.8}
           >
-            <Text style={showCreate ? styles.btnSecondaryText : styles.btnText}>
+            <Text style={[showCreate ? styles.btnInvertedText : styles.btnPrimaryText]}>
               {showCreate ? 'Cancel' : 'Create League'}
             </Text>
+            {!showCreate && <View style={styles.btnAccent} />}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[showJoin ? styles.btnSecondary : styles.btnOutline, styles.headerBtnHalf]}
+            style={[showJoin ? styles.btnInverted : styles.btnSecondary, styles.headerBtnHalf]}
             onPress={() => { setShowJoin(!showJoin); setShowCreate(false); setJoinError(''); }}
             activeOpacity={0.8}
           >
-            <Text style={showJoin ? styles.btnSecondaryText : styles.btnOutlineText}>
+            <Text style={[showJoin ? styles.btnInvertedText : styles.btnSecondaryText]}>
               {showJoin ? 'Cancel' : 'Join with Code'}
             </Text>
+            {!showJoin && <View style={styles.btnAccentSecondary} />}
           </TouchableOpacity>
         </View>
       </View>
@@ -121,33 +123,36 @@ export default function LeaguesScreen({ navigation }) {
       {/* Join with Code Form */}
       {showJoin && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Join a League</Text>
+          <Text style={styles.cardLabel}>Join With Code</Text>
           {joinError ? (
-            <View style={styles.errorBox}>
+            <View style={[styles.errorBox, { borderWidth: 1.5, borderColor: '#C41E3A' }]}>
               <Text style={styles.errorText}>{joinError}</Text>
             </View>
           ) : null}
-          <Text style={styles.label}>Invite Code</Text>
+          <Text style={styles.inputLabel}>Invite Code</Text>
           <TextInput
             style={styles.input}
             value={joinCode}
             onChangeText={text => setJoinCode(text.toUpperCase())}
             placeholder="e.g., A1B2C3D4"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#D4C098"
             autoCapitalize="characters"
             autoCorrect={false}
             maxLength={8}
           />
           <TouchableOpacity
-            style={[styles.btn, joining && { opacity: 0.6 }]}
+            style={[styles.btnPrimary, joining && { opacity: 0.6 }]}
             onPress={handleJoin}
             disabled={joining}
             activeOpacity={0.8}
           >
             {joining ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.btnText}>Join League</Text>
+              <>
+                <Text style={styles.btnPrimaryText}>Join League</Text>
+                <View style={styles.btnAccent} />
+              </>
             )}
           </TouchableOpacity>
         </View>
@@ -156,25 +161,24 @@ export default function LeaguesScreen({ navigation }) {
       {/* Email Verification Banner */}
       {emailNotVerified && (
         <View style={styles.verifyCard}>
-          <Text style={styles.verifyTitle}>Email Verification Required</Text>
           <Text style={styles.verifyText}>
-            You need to verify your email before creating or joining leagues. Check your inbox for the verification link.
+            ⚠  <Text style={{ fontWeight: '700' }}>Verify your email</Text> to create or join leagues
           </Text>
           {resendMessage ? (
-            <Text style={[styles.verifyText, { color: resendMessage.startsWith('Verification') ? '#16a34a' : '#dc2626', marginTop: 8 }]}>
+            <Text style={[styles.verifyText, { color: resendMessage.startsWith('Verification') ? '#2E6B3E' : '#C41E3A', marginTop: 8, fontWeight: '600' }]}>
               {resendMessage}
             </Text>
           ) : null}
           <TouchableOpacity
-            style={[styles.resendBtn, resendLoading && { opacity: 0.6 }]}
+            style={[styles.verifyBtn, resendLoading && { opacity: 0.6 }]}
             onPress={handleResendVerification}
             disabled={resendLoading}
             activeOpacity={0.8}
           >
             {resendLoading ? (
-              <ActivityIndicator color="#000080" size="small" />
+              <ActivityIndicator color="#0D1B4F" size="small" />
             ) : (
-              <Text style={styles.resendBtnText}>Resend Verification Email</Text>
+              <Text style={styles.verifyBtnText}>Resend Verification</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -183,40 +187,43 @@ export default function LeaguesScreen({ navigation }) {
       {/* Create League Form */}
       {showCreate && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Create New League</Text>
+          <Text style={styles.cardLabel}>New League</Text>
           {createError ? (
-            <View style={styles.errorBox}>
+            <View style={[styles.errorBox, { borderWidth: 1.5, borderColor: '#C41E3A' }]}>
               <Text style={styles.errorText}>{createError}</Text>
             </View>
           ) : null}
 
-          <Text style={styles.label}>League Name</Text>
+          <Text style={styles.inputLabel}>League Name</Text>
           <TextInput
             style={styles.input}
             value={name}
             onChangeText={setName}
             placeholder="e.g., The Hot Corner"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#D4C098"
             maxLength={100}
           />
 
           <TouchableOpacity
-            style={[styles.btn, creating && { opacity: 0.6 }]}
+            style={[styles.btnPrimary, creating && { opacity: 0.6 }]}
             onPress={handleCreate}
             disabled={creating}
             activeOpacity={0.8}
           >
             {creating ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.btnText}>Create League</Text>
+              <>
+                <Text style={styles.btnPrimaryText}>Create League</Text>
+                <View style={styles.btnAccent} />
+              </>
             )}
           </TouchableOpacity>
         </View>
       )}
 
       {error && (
-        <View style={styles.errorBox}>
+        <View style={[styles.errorBox, { borderWidth: 1.5, borderColor: '#C41E3A' }]}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
@@ -236,6 +243,7 @@ export default function LeaguesScreen({ navigation }) {
             onPress={() => navigation.navigate('LeagueDetail', { leagueId: league.id })}
             activeOpacity={0.7}
           >
+            <View style={styles.leagueTopBar} />
             <View style={styles.leagueHeader}>
               <Text style={styles.leagueName}>{league.name}</Text>
               <View style={[
@@ -253,9 +261,12 @@ export default function LeaguesScreen({ navigation }) {
             {league.description ? (
               <Text style={styles.leagueDesc} numberOfLines={2}>{league.description}</Text>
             ) : null}
-            <Text style={styles.memberCount}>
-              {league.member_count} {league.member_count === 1 ? 'member' : 'members'}
-            </Text>
+            <View style={styles.leagueFooter}>
+              <Text style={styles.memberCount}>
+                {league.member_count} {league.member_count === 1 ? 'member' : 'members'}
+              </Text>
+              <Text style={styles.leagueArrow}>→</Text>
+            </View>
           </TouchableOpacity>
         ))
       )}
@@ -263,112 +274,210 @@ export default function LeaguesScreen({ navigation }) {
   );
 }
 
+const C = {
+  cream: '#F4E9D0',
+  creamDark: '#E8D9B8',
+  creamDeep: '#D4C098',
+  parchment: '#F9F3E3',
+  red: '#C41E3A',
+  redDark: '#9E1730',
+  navy: '#0D1B4F',
+  navyMid: '#1A2F6E',
+  gold: '#C4912A',
+  goldLight: '#E8B84B',
+  brown: '#3D2112',
+  ink: '#1A0F08',
+  inkMid: '#4A3728',
+  inkLight: '#7A6050',
+  green: '#2E6B3E',
+  white: '#FFFFFF',
+};
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
+  container: { flex: 1, backgroundColor: C.cream },
   content: { padding: 16, paddingBottom: 32 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#000080', textAlign: 'center' },
-  subtitle: { color: '#6b7280', fontSize: 13, marginTop: 4, textAlign: 'center' },
-  headerBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  headerBtnHalf: { flex: 1 },
-  sectionTitle: { fontSize: 17, fontWeight: 'bold', color: '#000080', marginBottom: 14 },
-  btn: {
-    backgroundColor: '#FF0000',
-    borderRadius: 8,
-    paddingVertical: 10,
+
+  // ── Header Section ──
+  headerSection: {
+    backgroundColor: C.navy,
+    borderRadius: 0,
     paddingHorizontal: 16,
-    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 20,
+    marginHorizontal: -16,
+    marginBottom: 20,
   },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  btnSecondary: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    color: C.white,
+    textAlign: 'center',
   },
-  btnSecondaryText: { color: '#374151', fontWeight: '600', fontSize: 14 },
-  btnOutline: {
-    borderWidth: 1.5,
-    borderColor: '#000080',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  btnOutlineText: { color: '#000080', fontWeight: '700', fontSize: 14 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  input: {
-    borderWidth: 1.5,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#111827',
+  headerSubtitle: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: 'rgba(255, 255, 255, 0.45)',
+    textAlign: 'center',
+    marginTop: 6,
     marginBottom: 16,
-    backgroundColor: '#f9fafb',
   },
-  textArea: { height: 80, textAlignVertical: 'top' },
-  errorBox: { backgroundColor: '#fef2f2', borderRadius: 8, padding: 12, marginBottom: 12 },
-  errorText: { color: '#dc2626', fontSize: 13 },
-  verifyCard: {
-    backgroundColor: '#fffbeb',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
+  headerBtns: { flexDirection: 'row', gap: 12, marginTop: 0 },
+  headerBtnHalf: { flex: 1, position: 'relative' },
+
+  // ── Buttons ──
+  btnPrimary: {
+    backgroundColor: C.navy,
+    borderRadius: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  btnPrimaryText: { color: C.white, fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
+  btnAccent: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: C.gold,
+  },
+  btnSecondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: C.gold,
+    borderRadius: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnSecondaryText: { color: C.gold, fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
+  btnAccentSecondary: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: C.gold,
+  },
+  btnInverted: {
+    backgroundColor: C.gold,
+    borderRadius: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnInvertedText: { color: C.navy, fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
+
+  // ── Card ──
+  card: {
+    backgroundColor: C.parchment,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: '#fcd34d',
+    borderColor: C.creamDeep,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: C.creamDeep,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
-  verifyTitle: { fontSize: 15, fontWeight: '700', color: '#92400e', marginBottom: 8 },
-  verifyText: { color: '#78350f', fontSize: 13, lineHeight: 20 },
-  resendBtn: {
+  cardLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: C.gold,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 12,
+  },
+
+  // ── Input ──
+  inputLabel: { fontSize: 9, fontWeight: '700', color: C.navy, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
+  input: {
+    borderWidth: 1,
+    borderColor: C.creamDeep,
+    borderBottomWidth: 2,
+    borderBottomColor: C.navy,
+    borderRadius: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: C.ink,
+    marginBottom: 16,
+    backgroundColor: C.white,
+    fontStyle: 'italic',
+  },
+
+  // ── Error & Verify ──
+  errorBox: { backgroundColor: '#FFF5F5', borderRadius: 0, padding: 12, marginBottom: 12 },
+  errorText: { color: C.red, fontSize: 13, fontWeight: '500', fontStyle: 'italic' },
+  verifyCard: {
+    backgroundColor: C.gold,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: C.goldLight,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: C.creamDeep,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+  },
+  verifyText: { color: C.navy, fontSize: 13, fontStyle: 'italic', lineHeight: 20 },
+  verifyBtn: {
     marginTop: 12,
     borderWidth: 1.5,
-    borderColor: '#000080',
-    borderRadius: 8,
+    borderColor: C.navy,
+    borderRadius: 0,
     paddingVertical: 10,
+    paddingHorizontal: 12,
     alignItems: 'center',
+    backgroundColor: C.white,
   },
-  resendBtnText: { color: '#000080', fontWeight: '700', fontSize: 13 },
-  emptyCard: { alignItems: 'center', paddingVertical: 40 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 17, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  emptySubtitle: { color: '#6b7280', fontSize: 14, textAlign: 'center' },
+  verifyBtnText: { color: C.navy, fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.8 },
+
+  // ── Empty State ──
+  emptyCard: { alignItems: 'center', paddingVertical: 48 },
+  emptyIcon: { fontSize: 56, marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontWeight: '900', fontStyle: 'italic', color: C.navy, marginBottom: 8 },
+  emptySubtitle: { color: C.inkLight, fontSize: 13, textAlign: 'center', fontStyle: 'italic' },
+
+  // ── League Card ──
   leagueCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
+    backgroundColor: C.parchment,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: C.creamDeep,
+    marginBottom: 14,
+    overflow: 'hidden',
+    shadowColor: C.creamDeep,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
-  leagueHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  leagueName: { fontSize: 16, fontWeight: 'bold', color: '#000080', flex: 1, marginRight: 8 },
-  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeOwner: { backgroundColor: '#000080' },
-  badgeMember: { backgroundColor: '#f3f4f6' },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  badgeTextOwner: { color: '#fff' },
-  badgeTextMember: { color: '#4b5563' },
-  leagueDesc: { color: '#6b7280', fontSize: 13, marginTop: 6 },
-  memberCount: { color: '#9ca3af', fontSize: 12, marginTop: 8 },
+  leagueTopBar: {
+    height: 5,
+    backgroundColor: C.navy,
+    width: '100%',
+  },
+  leagueHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 14 },
+  leagueName: { fontSize: 16, fontWeight: '700', fontStyle: 'italic', color: C.navy, flex: 1, marginRight: 8 },
+  badge: { borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4 },
+  badgeOwner: { backgroundColor: C.navy },
+  badgeMember: { backgroundColor: C.creamDark },
+  badgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  badgeTextOwner: { color: C.white },
+  badgeTextMember: { color: C.inkMid },
+  leagueDesc: { color: C.inkMid, fontSize: 12, marginHorizontal: 16, marginTop: 8, fontStyle: 'italic' },
+  leagueFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 14, marginTop: 10 },
+  memberCount: { color: C.inkLight, fontSize: 11, fontStyle: 'italic' },
+  leagueArrow: { color: C.gold, fontSize: 16, fontWeight: 'bold' },
 });

@@ -7,7 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import AuthNavigator from './AuthNavigator';
 import AppTabNavigator from './AppTabNavigator';
+import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
 import { leagueService } from '../services/leagues';
+import { preloadLogos } from '../services/logoCache';
 
 const Stack = createNativeStackNavigator();
 const PENDING_INVITE_KEY = 'pendingInviteCode';
@@ -31,6 +33,10 @@ export default function AppNavigator() {
     const navigationRef = useRef(null);
     const userRef = useRef(user);
     useEffect(() => { userRef.current = user; }, [user]);
+
+    // Kick off logo caching in the background as soon as the navigator mounts.
+    // Fire-and-forget: logos load silently; CDN URLs are used as fallback until ready.
+    useEffect(() => { preloadLogos(); }, []);
 
     const handleDeepLink = async (url) => {
         const code = extractInviteCode(url);
@@ -96,7 +102,9 @@ export default function AppNavigator() {
     return (
         <NavigationContainer ref={navigationRef}>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {user ? (
+                {user?.mustChangePassword ? (
+                    <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+                ) : user ? (
                     <Stack.Screen name="App" component={AppTabNavigator} />
                 ) : (
                     <Stack.Screen name="Auth" component={AuthNavigator} />
