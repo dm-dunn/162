@@ -34,8 +34,37 @@ class ScoringService {
                 return { result: 'loss', points: 0, outcome: 'ML' };
             }
         } else if (pick.pick_type === 'spread') {
-            const userCorrect = (userPickedHome && homeWon) || (userPickedAway && awayWon);
-            return userCorrect
+            // game.spread is the home team's run line (e.g. -1.5 = home favored, +1.5 = underdog).
+            // Standard run-line math: a team covers if (their score + their spread) > opponent's score.
+            //
+            //   home covers  →  home_score + spread > away_score  →  runDiff + spread > 0
+            //   away covers  →  away_score + (-spread) > home_score  →  runDiff + spread < 0
+            //   push         →  runDiff + spread === 0 (impossible with ±1.5, possible with ±2)
+            //
+            // Falls back to straight win/loss if no spread is recorded (legacy rows / edge case).
+
+            const spread = parseFloat(game.spread);
+
+            if (isNaN(spread)) {
+                // No spread on record — fall back to moneyline-style grading
+                const userCorrect = (userPickedHome && homeWon) || (userPickedAway && awayWon);
+                return userCorrect
+                    ? { result: 'win', points: 2, outcome: 'SW' }
+                    : { result: 'loss', points: -1, outcome: 'SL' };
+            }
+
+            const runDiff     = game.home_score - game.away_score; // positive = home winning
+            const adjustedDiff = runDiff + spread;                 // positive = home covered
+
+            if (adjustedDiff === 0) {
+                // Push — no points awarded, no loss either
+                return { result: 'push', points: 0, outcome: 'SP' };
+            }
+
+            const homeCovered = adjustedDiff > 0;
+            const userCovered = (userPickedHome && homeCovered) || (userPickedAway && !homeCovered);
+
+            return userCovered
                 ? { result: 'win', points: 2, outcome: 'SW' }
                 : { result: 'loss', points: -1, outcome: 'SL' };
         }

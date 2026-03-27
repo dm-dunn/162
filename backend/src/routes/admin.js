@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const MLBDataService = require('../services/mlbDataService');
+const OddsService = require('../services/oddsService');
 const ScoringService = require('../services/scoringService');
 const CacheService = require('../services/cacheService');
 const { Game } = require('../models');
@@ -88,6 +89,23 @@ router.post('/jobs/update-leaderboard', async (req, res, next) => {
         res.json({
             success: true,
             message: 'Leaderboard updated successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Fetch real run lines + moneylines from The Odds API and write them to the DB.
+// Requires ODDS_API_KEY to be set. Safe to re-run (COALESCE prevents null overwrites).
+router.post('/jobs/fetch-odds', async (req, res, next) => {
+    try {
+        const date = req.body.date ? new Date(req.body.date) : new Date();
+        const results = await OddsService.fetchDailyOdds(date);
+
+        res.json({
+            success: true,
+            date: date.toISOString().split('T')[0],
+            ...results
         });
     } catch (error) {
         next(error);

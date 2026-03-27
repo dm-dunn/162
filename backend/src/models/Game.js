@@ -81,11 +81,35 @@ class Game {
 
     static async getFinalizedGames(date) {
         const result = await pool.query(
-            `SELECT * FROM games 
+            `SELECT * FROM games
              WHERE game_date = $1 AND status = 'final' AND home_score IS NOT NULL`,
             [date]
         );
         return result.rows;
+    }
+
+    /**
+     * Write real run-line and moneyline odds fetched from The Odds API.
+     * COALESCE ensures we never overwrite an existing value with null —
+     * so if the API only returns a spread (no h2h), moneylines are left alone.
+     *
+     * @param {number} gameId
+     * @param {number|null} spread       Home team's run line, e.g. -1.5 or 1.5
+     * @param {number|null} homeMoneyline American odds, e.g. -150
+     * @param {number|null} awayMoneyline American odds, e.g. +130
+     */
+    static async updateOdds(gameId, spread, homeMoneyline, awayMoneyline) {
+        const result = await pool.query(
+            `UPDATE games
+             SET spread          = COALESCE($2, spread),
+                 home_moneyline  = COALESCE($3, home_moneyline),
+                 away_moneyline  = COALESCE($4, away_moneyline),
+                 updated_at      = CURRENT_TIMESTAMP
+             WHERE id = $1
+             RETURNING id, spread, home_moneyline, away_moneyline`,
+            [gameId, spread, homeMoneyline, awayMoneyline]
+        );
+        return result.rows[0];
     }
 }
 

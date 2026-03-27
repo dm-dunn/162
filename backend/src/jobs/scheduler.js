@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const MLBDataService = require('../services/mlbDataService');
+const OddsService = require('../services/oddsService');
 const ScoringService = require('../services/scoringService');
 const { Game, User } = require('../models');
 const CacheService = require('../services/cacheService');
@@ -15,6 +16,20 @@ function initializeJobs() {
             await MLBDataService.fetchDailyGames(new Date());
         } catch (error) {
             logger.error('Fetch daily games error:', { message: error.message });
+        }
+    });
+
+    // Fetch real run lines + moneylines at 6:30 AM ET (10:30 AM UTC during DST).
+    // Runs 30 min after the game fetch so today's games are already in the DB.
+    // Requires ODDS_API_KEY — silently skips if the key isn't configured.
+    cron.schedule('30 10 * * *', async () => {
+        if (!process.env.ODDS_API_KEY) return; // key not set, skip silently
+        logger.info('Running: Fetch odds');
+        try {
+            const results = await OddsService.fetchDailyOdds(new Date());
+            logger.info('Fetch odds complete', results);
+        } catch (error) {
+            logger.error('Fetch odds error:', { message: error.message });
         }
     });
 
