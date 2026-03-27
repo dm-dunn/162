@@ -113,7 +113,7 @@ async function loadPicksAndGames() {
             p.pick_type,
             p.picked_team,
             p.result,
-            p.points,
+            p.points_earned AS points,
             p.outcome,
             g.id          AS game_id,
             g.game_date,
@@ -161,9 +161,10 @@ async function resetGame(gameId) {
 async function resetPick(pickId) {
     await pool.query(
         `UPDATE picks
-         SET result  = NULL,
-             points  = NULL,
-             outcome = NULL
+         SET result        = NULL,
+             points_earned = NULL,
+             outcome       = NULL,
+             graded_at     = NULL
          WHERE id = $1`,
         [pickId]
     );
@@ -204,7 +205,7 @@ async function inspect(rows) {
             const team = p.picked_team === 'home' ? `${g.home_team_abbr} (home)` : `${g.away_team_abbr} (away)`;
             const type = p.pick_type === 'spread' ? 'SPR' : 'ML ';
             const grade = p.result
-                ? `${resultColor(p.result)}  ${c(DIM, outcomeLabel(p.outcome))}  ${p.points > 0 ? c(GREEN, `+${p.points} pts`) : p.points < 0 ? c(RED, `${p.points} pts`) : c(DIM, '0 pts')}`
+                ? `${resultColor(p.result)}  ${c(DIM, outcomeLabel(p.outcome))}  ${p.points_earned > 0 ? c(GREEN, `+${p.points_earned} pts`) : p.points_earned < 0 ? c(RED, `${p.points_earned} pts`) : c(DIM, '0 pts')}`
                 : c(DIM, 'ungraded');
 
             console.log(`     [${type}] ${c(BOLD, p.username.padEnd(16))} → ${team.padEnd(16)} ${grade}`);
