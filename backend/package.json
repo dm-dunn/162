@@ -9,7 +9,9 @@
     "migrate": "node src/scripts/runMigration.js",
     "migrate:all": "node src/scripts/runAllMigrations.js",
     "seed": "node seeds/run.js",
-    "fetch-odds": "node src/scripts/fetchOdds.js"
+    "fetch-odds": "node src/scripts/fetchOdds.js",
+    "simulate": "node src/scripts/simulateGames.js",
+    "simulate:reset": "node src/scripts/simulateGames.js --reset"
   },
   "dependencies": {
     "axios": "^1.6.2",
