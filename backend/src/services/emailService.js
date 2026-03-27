@@ -4,9 +4,14 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'MLB162 <noreply@mlb162.com>';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 
+// BACKEND_URL is used for links that must hit a backend route (e.g. email verification).
+// In production this should be the Render API URL: https://one62.onrender.com
+// APP_URL (the frontend) is kept for frontend-handled links (password reset, etc.)
+const BACKEND_URL = (process.env.BACKEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+
 class EmailService {
     static async sendVerificationEmail(email, token) {
-        const verifyUrl = `${APP_URL}/verify-email?token=${token}`;
+        const verifyUrl = `${BACKEND_URL}/verify-email?token=${token}`;
 
         await resend.emails.send({
             from: FROM_EMAIL,

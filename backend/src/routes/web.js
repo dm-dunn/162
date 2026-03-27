@@ -1,8 +1,279 @@
 const express = require('express');
 const { League } = require('../models');
+const AuthService = require('../services/authService');
 
 const router = express.Router();
 
+// ─── Email Verification Landing Page ─────────────────────────────────────────
+// This is what the user hits when they click "Verify Email" in their inbox.
+// Processes the token server-side and returns a branded HTML result page.
+router.get('/verify-email', async (req, res) => {
+    const { token } = req.query;
+
+    let success = false;
+    let alreadyVerified = false;
+    let errorMsg = '';
+
+    if (!token) {
+        errorMsg = 'No verification token was provided. Please use the link from your email.';
+    } else {
+        try {
+            await AuthService.verifyEmail(token);
+            success = true;
+        } catch (err) {
+            if (err.message === 'Email already verified') {
+                success = true;
+                alreadyVerified = true;
+            } else {
+                errorMsg = 'This verification link has expired or is invalid. Please request a new one from the app.';
+            }
+        }
+    }
+
+    const title = success
+        ? (alreadyVerified ? 'Already Verified' : 'Email Verified!')
+        : 'Verification Failed';
+
+    const iconSvg = success
+        ? `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="28" cy="28" r="28" fill="#22c55e" opacity="0.15"/>
+            <circle cx="28" cy="28" r="20" fill="#22c55e" opacity="0.25"/>
+            <polyline points="18,28 25,35 38,21" stroke="#22c55e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+           </svg>`
+        : `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="28" cy="28" r="28" fill="#ef4444" opacity="0.15"/>
+            <circle cx="28" cy="28" r="20" fill="#ef4444" opacity="0.25"/>
+            <line x1="20" y1="20" x2="36" y2="36" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round"/>
+            <line x1="36" y1="20" x2="20" y2="36" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round"/>
+           </svg>`;
+
+    const headlineText = success
+        ? (alreadyVerified ? 'Already Good to Go' : "You're In!")
+        : 'Link Expired';
+
+    const bodyText = success
+        ? (alreadyVerified
+            ? 'Your email address was already verified. Open the MLB162 app and start making picks.'
+            : 'Your email has been verified. You\'re all set to start making picks, climbing the leaderboard, and competing in leagues. Open the app and play ball.')
+        : errorMsg;
+
+    const accentColor = success ? '#22c55e' : '#ef4444';
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(title)} — MLB162</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000066;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle baseball-stitch background pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(220,38,38,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 80%, rgba(220,38,38,0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* Floating diamond shapes */
+    .bg-diamond {
+      position: fixed;
+      width: 180px;
+      height: 180px;
+      border: 1.5px solid rgba(255,255,255,0.05);
+      transform: rotate(45deg);
+      pointer-events: none;
+    }
+    .bg-diamond-1 { top: -60px; right: -60px; width: 220px; height: 220px; }
+    .bg-diamond-2 { bottom: -80px; left: -80px; width: 260px; height: 260px; border-color: rgba(220,38,38,0.08); }
+    .bg-diamond-3 { top: 40%; right: 5%; width: 80px; height: 80px; border-color: rgba(255,255,255,0.04); }
+
+    .card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 44px 36px 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow:
+        0 4px 6px rgba(0,0,0,0.1),
+        0 20px 60px rgba(0,0,0,0.4),
+        0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Top accent bar */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #CC0000 0%, #FF1A1A 40%, #000099 100%);
+      border-radius: 24px 24px 0 0;
+    }
+
+    .logo-wrap {
+      margin-bottom: 28px;
+    }
+    .logo {
+      font-size: 32px;
+      font-weight: 900;
+      color: #000066;
+      letter-spacing: 3px;
+      line-height: 1;
+    }
+    .logo span { color: #CC0000; }
+    .logo-sub {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .icon-wrap {
+      margin-bottom: 20px;
+    }
+
+    .headline {
+      font-size: 26px;
+      font-weight: 800;
+      color: #000066;
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+
+    .body-text {
+      font-size: 15px;
+      color: #4b5563;
+      line-height: 1.65;
+      margin-bottom: 32px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #f3f4f6;
+      margin: 0 -36px 28px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: ${accentColor}18;
+      border: 1px solid ${accentColor}40;
+      color: ${accentColor};
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+    }
+    .status-badge::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: ${accentColor};
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cta-text {
+      font-size: 13px;
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+    .cta-text strong {
+      color: #6b7280;
+    }
+
+    /* Baseball seam decoration at bottom of card */
+    .seam-decoration {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 28px;
+      justify-content: center;
+    }
+    .seam-line {
+      height: 2px;
+      width: 32px;
+      background: linear-gradient(90deg, transparent, #e5e7eb);
+      border-radius: 2px;
+    }
+    .seam-line.right {
+      background: linear-gradient(90deg, #e5e7eb, transparent);
+    }
+    .seam-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #d1d5db;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-diamond bg-diamond-1"></div>
+  <div class="bg-diamond bg-diamond-2"></div>
+  <div class="bg-diamond bg-diamond-3"></div>
+
+  <div class="card">
+    <div class="logo-wrap">
+      <div class="logo">MLB<span>162</span></div>
+      <div class="logo-sub">Daily Picks Game</div>
+    </div>
+
+    <div class="icon-wrap">${iconSvg}</div>
+
+    <div class="status-badge">${success ? (alreadyVerified ? 'Already verified' : 'Verified') : 'Error'}</div>
+
+    <div class="headline">${escapeHtml(headlineText)}</div>
+
+    <div class="body-text">${escapeHtml(bodyText)}</div>
+
+    <hr class="divider" />
+
+    <div class="cta-text">
+      ${success
+        ? '<strong>Head back to the MLB162 app</strong> to start playing. You can close this tab.'
+        : 'Open the <strong>MLB162 app</strong> and tap <strong>Resend Verification Email</strong> to get a fresh link.'}
+    </div>
+
+    <div class="seam-decoration">
+      <div class="seam-line"></div>
+      <div class="seam-dot"></div>
+      <div class="seam-dot"></div>
+      <div class="seam-dot"></div>
+      <div class="seam-line right"></div>
+    </div>
+  </div>
+</body>
+</html>`);
+});
+
+// ─── League Invite Landing Page ───────────────────────────────────────────────
 // Invite landing page — handles the link that gets shared via text/iMessage/etc.
 // When app is installed: JS tries the custom scheme mlb162://join?code=XXXX
 // When app is not installed: shows App Store / Google Play download buttons
