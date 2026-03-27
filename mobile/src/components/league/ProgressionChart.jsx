@@ -41,7 +41,7 @@ export default function ProgressionChart({ progression, standings }) {
     userProg[uid] = [{ day: 'START', pts: 0 }, ...userProg[uid]];
   }
 
-  const maxPts = Math.max(...progression.map(r => parseFloat(r.cumulative)), 1);
+  const maxPts = Math.max(...progression.map(r => parseFloat(r.cumulative) || 0), 1);
   const xScale = i => (i / Math.max(allDays.length - 1, 1)) * innerW;
   const yScale = pts => innerH - (pts / maxPts) * innerH;
 
@@ -78,8 +78,8 @@ export default function ProgressionChart({ progression, standings }) {
     <View style={{ marginTop: 4 }}>
       {/* Line Chart */}
       <View style={{ height: CHART_H, width: chartWidth, position: 'relative' }}>
-        {yLabels.map(({ val, top }) => (
-          <Text key={val} style={{
+        {yLabels.map(({ val, top }, i) => (
+          <Text key={i} style={{
             position: 'absolute', left: 0, top,
             fontSize: 9, color: '#9ca3af', width: PAD.left - 4, textAlign: 'right',
           }}>

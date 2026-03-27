@@ -49,7 +49,20 @@ export default {
     web: {
       favicon: './assets/favicon.png',
     },
-    plugins: ['expo-asset', 'expo-font', 'expo-updates', 'expo-secure-store'],
+    plugins: [
+      'expo-asset',
+      'expo-font',
+      'expo-updates',
+      'expo-secure-store',
+      [
+        'expo-notifications',
+        {
+          icon: './assets/icon.png',
+          color: '#0D1B4F',
+          defaultChannel: 'default',
+        },
+      ],
+    ],
     extra: {
       eas: {
         projectId: '2a00edff-02e7-4951-b32d-bd352bd4885c',

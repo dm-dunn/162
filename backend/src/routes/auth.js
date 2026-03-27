@@ -1,5 +1,6 @@
 const express = require('express');
 const AuthService = require('../services/authService');
+const { User } = require('../models');
 const { authenticate } = require('../middleware/auth');
 const { validate, schemas } = require('../middleware/validation');
 
@@ -125,6 +126,19 @@ router.get('/me', authenticate, async (req, res) => {
             mustChangePassword: req.user.must_change_password || false
         }
     });
+});
+
+router.put('/push-token', authenticate, async (req, res, next) => {
+    try {
+        const { pushToken } = req.body;
+        if (!pushToken) {
+            return res.status(400).json({ error: 'Push token is required' });
+        }
+        await User.updatePushToken(req.user.id, pushToken);
+        res.json({ message: 'Push token saved' });
+    } catch (error) {
+        next(error);
+    }
 });
 
 module.exports = router;

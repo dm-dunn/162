@@ -187,6 +187,22 @@ class User {
         );
     }
 
+    // Push notifications
+    static async updatePushToken(userId, pushToken) {
+        await pool.query(
+            'UPDATE users SET push_token = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [pushToken, userId]
+        );
+    }
+
+    static async getPushToken(userId) {
+        const result = await pool.query(
+            'SELECT push_token FROM users WHERE id = $1 AND is_active = true',
+            [userId]
+        );
+        return result.rows[0]?.push_token || null;
+    }
+
     static async cleanupExpiredTokens() {
         await pool.query(
             'DELETE FROM refresh_tokens WHERE expires_at < NOW() OR revoked_at IS NOT NULL'

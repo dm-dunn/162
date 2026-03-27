@@ -43,6 +43,8 @@ export default function LeagueDetailScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [simulateLoading, setSimulateLoading] = useState(false);
+  const [simulateResult, setSimulateResult] = useState('');
 
   useEffect(() => { fetchLeague(); }, [leagueId]);
 
@@ -138,6 +140,23 @@ export default function LeagueDetailScreen({ route, navigation }) {
         },
       },
     ]);
+  };
+
+  const handleSimulateJoin = async () => {
+    setSimulateLoading(true);
+    setSimulateResult('');
+    try {
+      const result = await leagueService.simulateJoin(leagueId);
+      setSimulateResult(
+        result.hadToken
+          ? '✓ Push notification sent! Check your device.'
+          : '⚠ No push token registered — open the app on a real device first.'
+      );
+    } catch (err) {
+      setSimulateResult('✗ ' + (err.response?.data?.error || 'Failed to send simulation'));
+    } finally {
+      setSimulateLoading(false);
+    }
   };
 
   if (loading) {
@@ -329,6 +348,31 @@ export default function LeagueDetailScreen({ route, navigation }) {
         </View>
       )}
 
+      {/* ── Simulate Join (owner dev tool) ── */}
+      {isOwner && (
+        <View style={styles.simulateCard}>
+          <Text style={styles.simulateTitle}>🧪 Dev: Simulate Join</Text>
+          <Text style={styles.simulateHint}>
+            Fires a test push notification to your device as if someone just joined.
+          </Text>
+          <TouchableOpacity
+            style={[styles.simulateBtn, simulateLoading && { opacity: 0.5 }]}
+            onPress={handleSimulateJoin}
+            disabled={simulateLoading}
+            activeOpacity={0.8}
+          >
+            {simulateLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.simulateBtnText}>Send Test Notification</Text>
+            )}
+          </TouchableOpacity>
+          {simulateResult ? (
+            <Text style={styles.simulateResult}>{simulateResult}</Text>
+          ) : null}
+        </View>
+      )}
+
       {/* ── Delete League (owner only) ── */}
       {isOwner && (
         <TouchableOpacity
@@ -495,6 +539,53 @@ const styles = StyleSheet.create({
   badgeMember: { backgroundColor: C.creamDark },
   badgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   removeText: { color: C.red, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  // ── Simulate Join (dev tool) ──
+  simulateCard: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: '#3a3a5c',
+    borderStyle: 'dashed',
+    padding: 16,
+    marginBottom: 16,
+  },
+  simulateTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#a78bfa',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  simulateHint: {
+    fontSize: 11,
+    color: '#8b8ba7',
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  simulateBtn: {
+    backgroundColor: '#4f46e5',
+    borderRadius: 0,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  simulateBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  simulateResult: {
+    fontSize: 11,
+    color: '#a5b4fc',
+    marginTop: 10,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
 
   // ── Delete ──
   deleteBtn: {

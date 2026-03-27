@@ -2,6 +2,7 @@ import { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services/auth';
 import { tokenStorage } from '../services/tokenStorage';
 import { setLogoutCallback } from '../services/api';
+import { registerForPushNotifications } from '../services/notificationService';
 
 const AuthContext = createContext(null);
 
@@ -21,6 +22,8 @@ export function AuthProvider({ children }) {
       if (token) {
         const userData = await authService.getCurrentUser();
         setUser(userData);
+        // Re-register push token in case it rotated
+        registerForPushNotifications().catch(() => {});
       }
     } catch (error) {
       await tokenStorage.clearTokens();
@@ -34,6 +37,8 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     await tokenStorage.setAccessToken(data.accessToken);
     await tokenStorage.setRefreshToken(data.refreshToken);
+    // Register device for push notifications (non-blocking)
+    registerForPushNotifications().catch(() => {});
   };
 
   const register = async (username, email, password, color) => {

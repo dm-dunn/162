@@ -1,9 +1,10 @@
 const express = require('express');
 const crypto = require('crypto');
-const { League } = require('../models');
+const { League, User } = require('../models');
 const { authenticate, requireEmailVerified } = require('../middleware/auth');
 const { validate, schemas, validateIdParam } = require('../middleware/validation');
 const EmailService = require('../services/emailService');
+const notificationService = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -69,6 +70,22 @@ router.post('/join', authenticate, async (req, res, next) => {
         await League.addMember(invitation.league_id, req.user.id);
         await League.acceptInvitation(invitation.id);
 
+        // Notify league owner
+        try {
+            const league = await League.findById(invitation.league_id);
+            if (league && league.owner_id !== req.user.id) {
+                const ownerPushToken = await User.getPushToken(league.owner_id);
+                await notificationService.notifyLeagueJoin({
+                    ownerPushToken,
+                    joinerUsername: req.user.username,
+                    leagueName: league.name,
+                    leagueId: league.id,
+                });
+            }
+        } catch (notifErr) {
+            // Non-fatal
+        }
+
         res.json({ message: 'Successfully joined the league', leagueId: invitation.league_id });
     } catch (error) {
         next(error);
@@ -94,6 +111,22 @@ router.post('/join-code', authenticate, async (req, res, next) => {
         }
 
         await League.addMember(league.id, req.user.id);
+
+        // Notify league owner
+        try {
+            if (league.owner_id !== req.user.id) {
+                const ownerPushToken = await User.getPushToken(league.owner_id);
+                await notificationService.notifyLeagueJoin({
+                    ownerPushToken,
+                    joinerUsername: req.user.username,
+                    leagueName: league.name,
+                    leagueId: league.id,
+                });
+            }
+        } catch (notifErr) {
+            // Non-fatal — log and continue
+        }
+
         res.json({ message: 'Successfully joined the league', leagueId: league.id });
     } catch (error) {
         next(error);
@@ -272,6 +305,33 @@ router.delete('/:id/members/:userId', authenticate, validateIdParam('id'), async
 
         await League.removeMember(req.params.id, parseInt(req.params.userId));
         res.json({ message: 'Member removed' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Simulate a member joining (dev/test helper) — sends a test push notification to owner
+router.post('/:id/simulate-join', authenticate, validateIdParam('id'), async (req, res, next) => {
+    try {
+        const isOwner = await League.isOwner(req.params.id, req.user.id);
+        if (!isOwner) {
+            return res.status(403).json({ error: 'Only the league owner can trigger a simulation' });
+        }
+
+        const league = await League.findById(req.params.id);
+        if (!league) {
+            return res.status(404).json({ error: 'League not found' });
+        }
+
+        const ownerPushToken = await User.getPushToken(req.user.id);
+        await notificationService.notifyLeagueJoin({
+            ownerPushToken,
+            joinerUsername: 'TestUser_Demo',
+            leagueName: league.name,
+            leagueId: league.id,
+        });
+
+        res.json({ message: 'Simulation notification dispatched', hadToken: !!ownerPushToken });
     } catch (error) {
         next(error);
     }

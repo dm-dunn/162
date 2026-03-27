@@ -54,5 +54,10 @@ export const leagueService = {
   async getProgression(leagueId) {
     const response = await api.get(`/leagues/${leagueId}/progression`);
     return response.data;
-  }
+  },
+
+  async simulateJoin(leagueId) {
+    const response = await api.post(`/leagues/${leagueId}/simulate-join`);
+    return response.data;
+  },
 };
