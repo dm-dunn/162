@@ -168,22 +168,68 @@ class MLBDataService {
                 const gameData = await getGameDetails(game.external_game_id);
                 const liveData = gameData.liveData || {};
                 const linescore = liveData.linescore || {};
+                const statusObj = gameData.gameData?.status || {};
+                const abstractState = statusObj.abstractGameState;
+                const detailedState = statusObj.detailedState || '';
 
-                if (gameData.gameData.status.abstractGameState === 'Final') {
-                    await Game.updateScore(
-                        gameId,
-                        linescore.teams?.home?.runs || 0,
-                        linescore.teams?.away?.runs || 0,
-                        'final'
-                    );
+                if (abstractState === 'Final') {
+                    const homeScore = linescore.teams?.home?.runs;
+                    const awayScore = linescore.teams?.away?.runs;
 
-                    results.push({ gameId, success: true, status: 'final' });
+                    // Require valid numeric scores — don't write zeros blindly
+                    if (typeof homeScore !== 'number' || typeof awayScore !== 'number') {
+                        results.push({ gameId, success: false, error: 'API returned non-numeric scores', homeScore, awayScore });
+                        continue;
+                    }
+
+                    await Game.updateScore(gameId, homeScore, awayScore, 'final');
+                    results.push({ gameId, success: true, status: 'final', homeScore, awayScore });
+
+                } else if (detailedState.toLowerCase().includes('postponed')) {
+                    await Game.updateScore(gameId, null, null, 'postponed');
+                    results.push({ gameId, success: true, status: 'postponed' });
+
+                } else if (detailedState.toLowerCase().includes('suspended')) {
+                    await Game.updateScore(gameId, null, null, 'suspended');
+                    results.push({ gameId, success: true, status: 'suspended' });
+
+                } else if (detailedState.toLowerCase().includes('cancelled')) {
+                    await Game.updateScore(gameId, null, null, 'cancelled');
+                    results.push({ gameId, success: true, status: 'cancelled' });
                 }
+                // Still in progress or scheduled — no action needed
             } catch (error) {
                 results.push({ gameId, success: false, error: error.message });
             }
         }
 
+        return results;
+    }
+
+    /**
+     * Fetch final scores for all non-final games on a given date and mark
+     * them as 'final' (or 'postponed' / 'suspended') in the database.
+     * Call this before gradeAllGamesForDate() so the grading query finds data.
+     */
+    static async finalizeGamesForDate(date) {
+        const logger = require('../config/logger');
+        const games = await Game.findByDate(date);
+        const pending = games.filter(g => g.status !== 'final' && g.status !== 'postponed' && g.status !== 'suspended' && g.status !== 'cancelled');
+
+        if (pending.length === 0) {
+            logger.info('Finalize games: no pending games to check', { date });
+            return [];
+        }
+
+        logger.info(`Finalize games: checking ${pending.length} games`, { date });
+        const gameIds = pending.map(g => g.id);
+        const results = await this.updateGameScores(gameIds);
+
+        const finalized = results.filter(r => r.success && r.status === 'final').length;
+        const postponed = results.filter(r => r.success && r.status === 'postponed').length;
+        const failed    = results.filter(r => !r.success).length;
+
+        logger.info('Finalize games complete', { date, finalized, postponed, failed });
         return results;
     }
 }

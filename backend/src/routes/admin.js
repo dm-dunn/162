@@ -4,6 +4,7 @@ const MLBDataService = require('../services/mlbDataService');
 const OddsService = require('../services/oddsService');
 const ScoringService = require('../services/scoringService');
 const CacheService = require('../services/cacheService');
+const LivePollingService = require('../services/livePollingService');
 const { Game } = require('../models');
 
 const router = express.Router();
@@ -52,7 +53,7 @@ router.post('/jobs/update-lineups', async (req, res, next) => {
 router.post('/jobs/lock-games', async (req, res, next) => {
     try {
         const gamesToLock = await Game.getGamesToLock();
-        
+
         for (const game of gamesToLock) {
             await Game.lockGame(game.id);
         }
@@ -67,14 +68,51 @@ router.post('/jobs/lock-games', async (req, res, next) => {
     }
 });
 
+// Manually trigger one live poll cycle — fetches ESPN scores, grades any newly-final
+// games, sends push notifications, and updates the leaderboard if needed.
+router.post('/jobs/live-poll', async (req, res, next) => {
+    try {
+        const summary = await LivePollingService.pollAndGrade();
+        res.json({ success: true, ...summary });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Fetch final scores from the MLB API for a given date and mark games as 'final'.
+// Run this before grade-results if scores were not automatically fetched.
+router.post('/jobs/finalize-scores', async (req, res, next) => {
+    try {
+        const date = req.body.date || new Date().toISOString().split('T')[0];
+        const results = await MLBDataService.finalizeGamesForDate(date);
+
+        res.json({
+            success: true,
+            date,
+            finalized: results.filter(r => r.success && r.status === 'final').length,
+            postponed: results.filter(r => r.success && r.status === 'postponed').length,
+            failed:    results.filter(r => !r.success).length,
+            results
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.post('/jobs/grade-results', async (req, res, next) => {
     try {
         const date = req.body.date || new Date().toISOString().split('T')[0];
         const results = await ScoringService.gradeAllGamesForDate(date);
-        
+
+        const graded = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success).length;
+
         res.json({
             success: true,
             date,
+            gamesGraded: graded,
+            gamesFailed: failed,
+            totalGames: results.length,
             results
         });
     } catch (error) {

@@ -19,7 +19,7 @@ router.get('/', authenticate, async (req, res, next) => {
                 return res.status(403).json({ error: 'You are not a member of this league' });
             }
 
-            query = `SELECT l.*, u.username, u.username, u.color
+            query = `SELECT l.*, u.username, u.color
                      FROM leaderboard l
                      JOIN users u ON l.user_id = u.id
                      JOIN league_members lm ON lm.user_id = u.id
@@ -28,7 +28,7 @@ router.get('/', authenticate, async (req, res, next) => {
                      LIMIT 100`;
             params = [leagueId];
         } else {
-            query = `SELECT l.*, u.username, u.username, u.color
+            query = `SELECT l.*, u.username, u.color
                      FROM leaderboard l
                      JOIN users u ON l.user_id = u.id
                      ORDER BY l.rank ASC
@@ -74,7 +74,6 @@ router.get('/progress', authenticate, async (req, res, next) => {
             const userProgress = {
                 userId: user.id,
                 username: user.username,
-                username: user.username,
                 color: user.color,
                 points: []
             };
@@ -117,7 +116,7 @@ router.get('/user/:userId', authenticate, async (req, res, next) => {
         const { userId } = req.params;
         
         const result = await pool.query(
-            `SELECT l.*, u.username, u.username
+            `SELECT l.*, u.username
              FROM leaderboard l
              JOIN users u ON l.user_id = u.id
              WHERE l.user_id = $1`,

@@ -4,6 +4,7 @@ const OddsService = require('../services/oddsService');
 const ScoringService = require('../services/scoringService');
 const { Game, User } = require('../models');
 const CacheService = require('../services/cacheService');
+const LivePollingService = require('../services/livePollingService');
 const logger = require('../config/logger');
 
 function initializeJobs() {
@@ -66,7 +67,46 @@ function initializeJobs() {
         }
     });
 
-    // Grade results at midnight ET (5 AM UTC)
+    // Live score polling every 15 minutes during game hours (12 PM – 1 AM ET).
+    // UTC equivalent: 4 PM–5 AM UTC (covers DST and EST).
+    // Polls ESPN for all game statuses, grades picks the moment a game goes final,
+    // and sends push notifications to users. The 4 AM/5 AM safety-net jobs below
+    // handle anything this job misses (e.g. server restart during game hours).
+    cron.schedule('*/15 16-23,0-5 * * *', async () => {
+        try {
+            const summary = await LivePollingService.pollAndGrade();
+            if (summary.gamesFinalized > 0 || summary.errors.length > 0) {
+                logger.info('Live poll cycle complete', summary);
+            }
+            // Quiet no-op log when nothing changed (avoid log spam every 15 min)
+        } catch (error) {
+            logger.error('Live poll error (unexpected):', { message: error.message });
+        }
+    });
+
+    // SAFETY NET: Finalize any remaining unfinalized games at 4 AM UTC.
+    // Under normal operation the 15-min live polling job above handles this in real time.
+    // This job is a fallback for nights when the server was down or the poll missed games.
+    // Fetches final scores from the MLB API and marks games as 'final' (or
+    // 'postponed' / 'suspended') so the grading job has data to work with.
+    cron.schedule('0 4 * * *', async () => {
+        logger.info('Running: Finalize game scores');
+        try {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const dateStr = yesterday.toISOString().split('T')[0];
+
+            const results = await MLBDataService.finalizeGamesForDate(dateStr);
+            const finalized = results.filter(r => r.success && r.status === 'final').length;
+            logger.info('Finalize game scores complete', { date: dateStr, finalized, total: results.length });
+        } catch (error) {
+            logger.error('Finalize game scores error:', { message: error.message });
+        }
+    });
+
+    // SAFETY NET: Grade any remaining ungraded picks at 5 AM UTC.
+    // Under normal operation picks are graded immediately by the live polling job.
+    // This job catches anything the polling job missed.
     cron.schedule('0 5 * * *', async () => {
         logger.info('Running: Grade results');
         try {
@@ -74,13 +114,23 @@ function initializeJobs() {
             yesterday.setDate(yesterday.getDate() - 1);
             const dateStr = yesterday.toISOString().split('T')[0];
 
-            await ScoringService.gradeAllGamesForDate(dateStr);
+            const results = await ScoringService.gradeAllGamesForDate(dateStr);
+            const graded   = results.filter(r => r.success).length;
+            const failed   = results.filter(r => !r.success).length;
+
+            if (results.length === 0) {
+                logger.warn('Grade results: zero games found to grade — scores may not be finalized yet', { date: dateStr });
+            } else {
+                logger.info('Grade results complete', { date: dateStr, graded, failed, total: results.length });
+            }
         } catch (error) {
             logger.error('Grade results error:', { message: error.message });
         }
     });
 
-    // Update leaderboard at 12:30 AM ET (5:30 AM UTC)
+    // SAFETY NET: Full leaderboard recalculation at 5:30 AM UTC.
+    // The live polling job does incremental leaderboard updates after each game.
+    // This job ensures the leaderboard is fully correct after all nightly processing.
     cron.schedule('30 5 * * *', async () => {
         logger.info('Running: Update leaderboard');
         try {

@@ -9,6 +9,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useGames } from '../hooks/useGames';
 import { usePicks } from '../hooks/usePicks';
 import { useLeagues } from '../hooks/useLeagues';
+import { useLeagueLeaderboards } from '../hooks/useLeagueLeaderboards';
 import GameCard from '../components/game/GameCard';
 import api from '../services/api';
 import { mockGames, mockPicks, USE_MOCK_DATA } from '../utils/mockData';
@@ -39,6 +40,7 @@ export default function DashboardScreen({ navigation }) {
   const { games: apiGames, loading: gamesLoading, refetch: refetchGames } = useGames();
   const { picks: apiPicks, loading: picksLoading, refetch: refetchPicks } = usePicks();
   const { leagues } = useLeagues();
+  const { leagueLeaderboards } = useLeagueLeaderboards(leagues);
 
   const [localPicks, setLocalPicks] = useState(mockPicks);
   const [submitted, setSubmitted] = useState(false);
@@ -132,7 +134,7 @@ export default function DashboardScreen({ navigation }) {
   ];
   const leaguePages = leagues.map(l => ({
     name: l.name || l.league_name,
-    data: leaderboard.filter(lb => lb.league_id === l.id)
+    data: leagueLeaderboards[l.id] || []
   }));
   standingsPages.push(...leaguePages);
 

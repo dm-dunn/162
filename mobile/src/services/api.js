@@ -16,7 +16,7 @@ const getApiUrl = () => {
     }
   }
   // Fallback for standalone builds without the env var set
-  return 'https://api.mlb162.app/api';
+  return 'https://onesixtytwo.dev/api';
 };
 
 const API_URL = getApiUrl();

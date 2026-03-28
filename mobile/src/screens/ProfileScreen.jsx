@@ -335,6 +335,7 @@ export default function ProfileScreen() {
       >
         <Text style={styles.signOutText}>SIGN OUT</Text>
       </TouchableOpacity>
+
     </ScrollView>
   );
 }

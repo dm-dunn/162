@@ -310,31 +310,4 @@ router.delete('/:id/members/:userId', authenticate, validateIdParam('id'), async
     }
 });
 
-// Simulate a member joining (dev/test helper) — sends a test push notification to owner
-router.post('/:id/simulate-join', authenticate, validateIdParam('id'), async (req, res, next) => {
-    try {
-        const isOwner = await League.isOwner(req.params.id, req.user.id);
-        if (!isOwner) {
-            return res.status(403).json({ error: 'Only the league owner can trigger a simulation' });
-        }
-
-        const league = await League.findById(req.params.id);
-        if (!league) {
-            return res.status(404).json({ error: 'League not found' });
-        }
-
-        const ownerPushToken = await User.getPushToken(req.user.id);
-        await notificationService.notifyLeagueJoin({
-            ownerPushToken,
-            joinerUsername: 'TestUser_Demo',
-            leagueName: league.name,
-            leagueId: league.id,
-        });
-
-        res.json({ message: 'Simulation notification dispatched', hadToken: !!ownerPushToken });
-    } catch (error) {
-        next(error);
-    }
-});
-
 module.exports = router;

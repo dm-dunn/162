@@ -146,6 +146,9 @@ cd backend && npm run migrate:all
 | 006 | Password reset tokens |
 | 007 | JWT refresh token storage |
 | 008 | `must_change_password` flag on users |
+| 009 | `home_moneyline` / `away_moneyline` columns on games; index on `game_date` |
+| 010 | Extends `picks.outcome` CHECK constraint to include `SP` (spread push) |
+| 011 | `push_token` column on users for Expo push notifications |
 
 **Key constraints:** `picks(user_id, game_id)` is unique; games use JSONB for lineup/pitcher data.
 
@@ -173,7 +176,7 @@ Four cron jobs defined in `backend/src/jobs/scheduler.js`, also triggerable via 
 - `preview` — internal, staging API
 - `production` — App Store + Google Play, auto-increment version
 
-**Production API:** `https://one62.onrender.com/api`
+**Production API:** `https://onesixtytwo.dev/api`
 
 ## Key Conventions
 
@@ -208,6 +211,6 @@ Four cron jobs defined in `backend/src/jobs/scheduler.js`, also triggerable via 
 
 ## Current WIP
 
-- **`mobile/src/screens/auth/ChangePasswordScreen.jsx`** — new, untracked; part of the password-change-required workflow
-- Recent commits focused on password reset flow (`must_change_password` flag, change-password endpoint, mobile screen)
-- Modified files: `mobile/src/context/AuthContext.jsx`, `mobile/src/navigation/AppNavigator.jsx`, `mobile/src/services/auth.js`, `mobile/src/utils/teamLogos.js`
+- Pre-production audit complete; all known bugs fixed
+- Push notifications integrated (migration 011 required on production DB)
+- iOS-only EAS build target; `eas build --platform ios --profile production`
