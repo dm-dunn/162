@@ -14,6 +14,9 @@ import GameCard from '../components/game/GameCard';
 import api from '../services/api';
 import { mockGames, mockPicks, USE_MOCK_DATA } from '../utils/mockData';
 
+// Warm grayscale for other users' indicator bars — fits the parchment palette
+const OTHERS_BAR_COLOR = '#9A8878';
+
 const C = {
   cream: '#F4E9D0',
   creamDark: '#E8D9B8',
@@ -47,6 +50,7 @@ export default function DashboardScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [standingsPage, setStandingsPage] = useState(0);
+  const [standingsScrollWidth, setStandingsScrollWidth] = useState(0);
 
   const games = USE_MOCK_DATA ? mockGames : apiGames;
   const picks = USE_MOCK_DATA ? localPicks : apiPicks;
@@ -202,33 +206,42 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onMomentumScrollEnd={(evt) => {
-            const pageWidth = Math.round(evt.nativeEvent.layoutMeasurement.width);
-            const page = Math.round(evt.nativeEvent.contentOffset.x / pageWidth);
-            setStandingsPage(page);
-          }}
-          style={styles.standingsScroll}
+        <View
+          style={styles.standingsScrollContainer}
+          onLayout={(e) => setStandingsScrollWidth(e.nativeEvent.layout.width)}
         >
-          {standingsPages.map((pg, pageIdx) => (
-            <View key={pageIdx} style={styles.standingsPage}>
-              {getStandingsRows(pg.data).map((row, idx) => {
-                const isUserRow = row.user_id === user.id;
-                return (
-                  <View key={idx} style={[styles.standingsRow, isUserRow && styles.standingsRowUser]}>
-                    <View style={[styles.standingsBar, { backgroundColor: row.color || C.navy }]} />
-                    <Text style={styles.standingsUsername}>{row.username}</Text>
-                    <Text style={styles.standingsPoints}>{row.total_points}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          ))}
-        </ScrollView>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onMomentumScrollEnd={(evt) => {
+              if (!standingsScrollWidth) return;
+              const page = Math.round(evt.nativeEvent.contentOffset.x / standingsScrollWidth);
+              setStandingsPage(page);
+            }}
+            style={styles.standingsScroll}
+          >
+            {standingsPages.map((pg, pageIdx) => (
+              <View
+                key={pageIdx}
+                style={[styles.standingsPage, standingsScrollWidth > 0 && { width: standingsScrollWidth }]}
+              >
+                {getStandingsRows(pg.data).map((row, idx) => {
+                  const isUserRow = row.user_id === user.id;
+                  const barColor = isUserRow ? (row.color || C.navy) : OTHERS_BAR_COLOR;
+                  return (
+                    <View key={idx} style={[styles.standingsRow, isUserRow && styles.standingsRowUser]}>
+                      <View style={[styles.standingsBar, { backgroundColor: barColor }]} />
+                      <Text style={styles.standingsUsername}>{row.username}</Text>
+                      <Text style={styles.standingsPoints}>{row.total_points}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
 
         {/* Page dots */}
         <View style={styles.standingsDots}>
@@ -442,11 +455,14 @@ const styles = StyleSheet.create({
     color: C.gold,
     letterSpacing: 1.5,
   },
+  standingsScrollContainer: {
+    overflow: 'hidden',
+  },
   standingsScroll: {
     minHeight: 150,
   },
   standingsPage: {
-    width: '100%',
+    // Width is set dynamically to the measured container width for correct pagingEnabled behavior
     paddingHorizontal: 12,
     paddingTop: 10,
   },

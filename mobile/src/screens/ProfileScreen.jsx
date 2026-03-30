@@ -8,6 +8,27 @@ import { useLeagues } from '../hooks/useLeagues';
 import api from '../services/api';
 import { USE_MOCK_DATA, mockStats } from '../utils/mockData';
 
+// Color options — must match RegisterScreen exactly
+const COLOR_OPTIONS = [
+  { name: 'Navy Blue', value: '#1e40af' },
+  { name: 'Red',       value: '#dc2626' },
+  { name: 'Green',     value: '#059669' },
+  { name: 'Purple',    value: '#7c3aed' },
+  { name: 'Orange',    value: '#ea580c' },
+  { name: 'Pink',      value: '#db2777' },
+  { name: 'Teal',      value: '#0d9488' },
+  { name: 'Amber',     value: '#d97706' },
+];
+
+const getColorName = (hex) => {
+  if (!hex) return 'None';
+  const match = COLOR_OPTIONS.find(opt => opt.value.toLowerCase() === hex.toLowerCase());
+  return match ? match.name : hex;
+};
+
+// Warm grayscale for other users' bars — fits the cream/parchment palette
+const OTHERS_BAR_COLOR = '#9A8878';
+
 // Retro baseball card color palette
 const C = {
   cream: '#F4E9D0',
@@ -192,7 +213,13 @@ export default function ProfileScreen() {
               {standingsSlice.map((entry) => {
                 const isCurrentUser = entry.user_id === user.id;
                 const pct = (entry.total_points / maxPointsStandings) * 100;
-                const barColor = entry.color || C.navy;
+                // Current user: use their chosen color. Everyone else: warm grayscale.
+                const barColor = isCurrentUser
+                  ? (entry.color || user.color || C.navy)
+                  : OTHERS_BAR_COLOR;
+
+                // "YOU" fits comfortably inside the bar at ~35%+ width
+                const youTagInside = pct >= 35;
 
                 return (
                   <View key={entry.user_id} style={styles.standingsRow}>
@@ -206,7 +233,7 @@ export default function ProfileScreen() {
                           styles.standingsBar,
                           {
                             width: `${Math.max(pct, 15)}%`,
-                            backgroundColor: isCurrentUser ? C.red : barColor,
+                            backgroundColor: barColor,
                           }
                         ]}
                       >
@@ -214,13 +241,18 @@ export default function ProfileScreen() {
                           <Text style={styles.standingsBarName} numberOfLines={1}>
                             {entry.username}
                           </Text>
-                          {isCurrentUser && (
+                          {isCurrentUser && youTagInside && (
                             <Text style={styles.youTag}>YOU</Text>
                           )}
                         </View>
                         <Text style={styles.standingsBarPoints}>{entry.total_points}</Text>
                       </View>
                     </View>
+
+                    {/* "YOU" floated right when bar is too narrow */}
+                    {isCurrentUser && !youTagInside && (
+                      <Text style={styles.youTagOutside}>YOU</Text>
+                    )}
                   </View>
                 );
               })}
@@ -259,7 +291,7 @@ export default function ProfileScreen() {
             <Text style={styles.menuLabel}>Your Color</Text>
             <View style={styles.colorOption}>
               <View style={[styles.colorCircle, { backgroundColor: user.color || C.gold }]} />
-              <Text style={styles.colorName}>{user.colorName || 'Gold'}</Text>
+              <Text style={styles.colorName}>{getColorName(user.color)}</Text>
             </View>
           </View>
         </View>
@@ -554,6 +586,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 2,
+  },
+  youTagOutside: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: C.inkLight,
+    borderWidth: 1,
+    borderColor: C.inkLight,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 2,
+    marginLeft: 6,
+    alignSelf: 'center',
   },
   standingsBarPoints: {
     fontSize: 11,

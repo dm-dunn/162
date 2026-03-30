@@ -34,39 +34,65 @@ class ScoringService {
                 return { result: 'loss', points: 0, outcome: 'ML' };
             }
         } else if (pick.pick_type === 'spread') {
-            // game.spread is the home team's run line (e.g. -1.5 = home favored, +1.5 = underdog).
+            // game.spread is the home team's run line (e.g. -1.5 = home favored, +1.5 = home underdog).
             // Standard run-line math: a team covers if (their score + their spread) > opponent's score.
             //
             //   home covers  →  home_score + spread > away_score  →  runDiff + spread > 0
-            //   away covers  →  away_score + (-spread) > home_score  →  runDiff + spread < 0
+            //   away covers  →  away_score + (-spread) > home_score →  runDiff + spread < 0
             //   push         →  runDiff + spread === 0 (impossible with ±1.5, possible with ±2)
             //
-            // Falls back to straight win/loss if no spread is recorded (legacy rows / edge case).
+            // TIERED SCORING (migration 013)
+            // ───────────────────────────────
+            // Picking the FAVORITE on the run line (-1.5) is harder: they must win by 2+.
+            // Historically the favorite -1.5 covers only ~43% of MLB games.
+            // Picking the UNDERDOG on the run line (+1.5) is easier: they can lose by 1 and still cover.
+            // Historically the underdog +1.5 covers ~57% of MLB games.
+            //
+            // Scoring:
+            //   Favorite covers  → +2 pts, outcome SFW   (bold call, high reward)
+            //   Favorite misses  → -1 pt,  outcome SFL   (real downside for the bold pick)
+            //   Underdog covers  → +0.5 pts, outcome SDW  (easy call, small bump)
+            //   Underdog misses  →  0 pts, outcome SDL    (no penalty for the safe call)
+            //   Push             →  0 pts, outcome SP
+            //
+            // Falls back to moneyline-style grading if no spread is on record.
 
             const spread = parseFloat(game.spread);
 
             if (isNaN(spread)) {
-                // No spread on record — fall back to moneyline-style grading
+                // No spread on record — treat like a moneyline
                 const userCorrect = (userPickedHome && homeWon) || (userPickedAway && awayWon);
                 return userCorrect
-                    ? { result: 'win', points: 2, outcome: 'SW' }
-                    : { result: 'loss', points: -1, outcome: 'SL' };
+                    ? { result: 'win',  points: 1,  outcome: 'MW' }
+                    : { result: 'loss', points: 0,  outcome: 'ML' };
             }
 
-            const runDiff     = game.home_score - game.away_score; // positive = home winning
-            const adjustedDiff = runDiff + spread;                 // positive = home covered
+            const runDiff      = game.home_score - game.away_score; // positive = home winning
+            const adjustedDiff = runDiff + spread;                  // positive = home covered
 
             if (adjustedDiff === 0) {
-                // Push — no points awarded, no loss either
                 return { result: 'push', points: 0, outcome: 'SP' };
             }
 
-            const homeCovered = adjustedDiff > 0;
-            const userCovered = (userPickedHome && homeCovered) || (userPickedAway && !homeCovered);
+            const homeCovered  = adjustedDiff > 0;
+            const userCovered  = (userPickedHome && homeCovered) || (userPickedAway && !homeCovered);
 
-            return userCovered
-                ? { result: 'win', points: 2, outcome: 'SW' }
-                : { result: 'loss', points: -1, outcome: 'SL' };
+            // Determine whether the user picked the favorite or the underdog side.
+            // spread < 0 → home is the favorite; spread > 0 → away is the favorite.
+            const userPickedFavorite =
+                (userPickedHome && spread < 0) ||
+                (userPickedAway && spread > 0);
+
+            if (userPickedFavorite) {
+                return userCovered
+                    ? { result: 'win',  points: 2,  outcome: 'SFW' }
+                    : { result: 'loss', points: -1, outcome: 'SFL' };
+            } else {
+                // User picked the underdog side
+                return userCovered
+                    ? { result: 'win',  points: 0.5, outcome: 'SDW' }
+                    : { result: 'loss', points: 0,   outcome: 'SDL' };
+            }
         }
 
         return { result: 'error', points: 0, outcome: null };
@@ -95,12 +121,12 @@ class ScoringService {
         for (const user of users.rows) {
             const stats = await Pick.getUserStats(user.id);
 
-            const totalGames = parseInt(stats.total_picks) || 0;
-            const totalPoints = parseInt(stats.total_points) || 0;
-            const mlWins = parseInt(stats.ml_wins) || 0;
-            const mlLosses = parseInt(stats.ml_losses) || 0;
-            const spreadWins = parseInt(stats.spread_wins) || 0;
-            const spreadLosses = parseInt(stats.spread_losses) || 0;
+            const totalGames   = parseInt(stats.total_picks)   || 0;
+            const totalPoints  = parseFloat(stats.total_points) || 0;  // NUMERIC — supports 0.5 increments
+            const mlWins       = parseInt(stats.ml_wins)        || 0;
+            const mlLosses     = parseInt(stats.ml_losses)      || 0;
+            const spreadWins   = parseInt(stats.spread_wins)    || 0;
+            const spreadLosses = parseInt(stats.spread_losses)  || 0;
 
             const mlWinPct = mlWins + mlLosses > 0 
                 ? (mlWins / (mlWins + mlLosses) * 100).toFixed(2)
