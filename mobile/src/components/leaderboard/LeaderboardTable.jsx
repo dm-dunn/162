@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { formatPoints } from '../../utils/formatters';
 
 // Retro baseball card color palette
 const C = {
@@ -91,7 +92,7 @@ export default function LeaderboardTable({ leaderboard, currentUserId }) {
                         </View>
                       )}
                     </View>
-                    <Text style={styles.barPoints}>{entry.total_points}</Text>
+                    <Text style={styles.barPoints}>{formatPoints(entry.total_points)}</Text>
                   </View>
                 </View>
               </View>

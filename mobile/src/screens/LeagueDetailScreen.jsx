@@ -4,6 +4,7 @@ import {
   ActivityIndicator, Alert, Share,
 } from 'react-native';
 import { leagueService } from '../services/leagues';
+import { formatPoints } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import ProgressionChart from '../components/league/ProgressionChart';
 
@@ -249,7 +250,7 @@ export default function LeagueDetailScreen({ route, navigation }) {
                   <Text style={[styles.standingsCell, { flex: 1.2, textAlign: 'center' }]}>{mlRec}</Text>
                   <Text style={[styles.standingsCell, { flex: 1.2, textAlign: 'center' }]}>{sprRec}</Text>
                   <Text style={[styles.standingsPoints, { flex: 1.4, textAlign: 'right' }]}>
-                    {entry.total_points}
+                    {formatPoints(entry.total_points)}
                   </Text>
                 </View>
               );

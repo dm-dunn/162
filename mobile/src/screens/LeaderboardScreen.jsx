@@ -46,17 +46,22 @@ export default function LeaderboardScreen() {
     ...leagues.map(l => ({ label: l.name, value: l.id }))
   ];
 
+  // Calculate yesterday's date for leaderboard subtitle
+  const yesterday = new Date(Date.now() - 86400000);
+  const monthName = yesterday.toLocaleString('en-US', { month: 'long' });
+  const day = yesterday.getDate();
+  const year = new Date().getFullYear();
+
+  const pageTitle = selectedLeague
+    ? (filterOptions.find(o => o.value === selectedLeague)?.label?.toUpperCase() ?? 'THE BOARD')
+    : 'THE BOARD';
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* App Bar */}
-      <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>The Board</Text>
-        <Text style={styles.appBarSeason}>2026 Season</Text>
-      </View>
 
       {/* League Filter Tabs */}
       {filterOptions.length > 0 && (
@@ -91,8 +96,8 @@ export default function LeaderboardScreen() {
 
       {/* Page Header */}
       <View style={styles.pageHeader}>
-        <Text style={styles.pageHeaderTitle}>THE BOARD</Text>
-        <Text style={styles.pageHeaderSubtitle}>2026 Season · Through March 26</Text>
+        <Text style={styles.pageHeaderTitle}>{pageTitle}</Text>
+        <Text style={styles.pageHeaderSubtitle}>{year} Season · Through {monthName} {day}</Text>
         <View style={styles.decorativeRule} />
       </View>
 
@@ -158,21 +163,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: C.creamDeep,
-    backgroundColor: 'transparent',
+    borderColor: C.cream,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   filterPillActive: {
-    backgroundColor: C.navy,
+    backgroundColor: C.gold,
     borderColor: C.gold,
   },
   filterPillText: {
     fontSize: 13,
     fontWeight: '700',
-    color: C.inkMid,
+    color: C.cream,
     letterSpacing: 0.5,
   },
   filterPillTextActive: {
-    color: C.white,
+    color: C.navy,
   },
 
   // Page Header

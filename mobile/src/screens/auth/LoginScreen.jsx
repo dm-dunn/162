@@ -5,6 +5,25 @@ import {
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
+// Color palette matching DashboardScreen design system
+const C = {
+  cream: '#F4E9D0',
+  creamDark: '#E8D9B8',
+  creamDeep: '#D4C098',
+  parchment: '#F9F3E3',
+  red: '#C41E3A',
+  redDark: '#9E1730',
+  navy: '#0D1B4F',
+  navyMid: '#1A2F6E',
+  gold: '#C4912A',
+  goldLight: '#E8B84B',
+  brown: '#3D2112',
+  ink: '#1A0F08',
+  inkMid: '#4A3728',
+  inkLight: '#7A6050',
+  white: '#FFFFFF',
+};
+
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,7 +81,7 @@ export default function LoginScreen({ navigation }) {
             autoCorrect={false}
             keyboardType="email-address"
             placeholder="Enter your email"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={C.inkLight}
           />
 
           <Text style={styles.label}>Password</Text>
@@ -72,7 +91,7 @@ export default function LoginScreen({ navigation }) {
             onChangeText={setPassword}
             secureTextEntry
             placeholder="Enter your password"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={C.inkLight}
           />
 
           <TouchableOpacity
@@ -82,7 +101,7 @@ export default function LoginScreen({ navigation }) {
             activeOpacity={0.8}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={C.white} />
             ) : (
               <Text style={styles.btnText}>Login</Text>
             )}
@@ -106,47 +125,51 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000080' },
+  container: { flex: 1, backgroundColor: C.parchment },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   header: { alignItems: 'center', marginBottom: 32 },
-  logo: { fontSize: 48, fontWeight: '900', color: '#fff', letterSpacing: 2 },
-  logoRed: { color: '#FF0000' },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 16, marginTop: 4 },
+  logo: { fontSize: 48, fontWeight: '900', fontStyle: 'italic', color: C.navy, letterSpacing: -0.5 },
+  logoRed: { color: C.red },
+  subtitle: { color: C.inkLight, fontSize: 16, marginTop: 4 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: C.parchment,
+    borderWidth: 1,
+    borderColor: C.creamDeep,
+    borderRadius: 0,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowColor: C.creamDeep,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#000080', marginBottom: 20, textAlign: 'center' },
-  errorBox: { backgroundColor: '#fef2f2', borderColor: '#fca5a5', borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: '900', fontStyle: 'italic', color: C.navy, marginBottom: 20, textAlign: 'center', letterSpacing: -0.5 },
+  errorBox: { backgroundColor: '#fef2f2', borderColor: '#fca5a5', borderWidth: 1, borderRadius: 0, padding: 12, marginBottom: 16 },
   errorText: { color: '#dc2626', fontSize: 14 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: '700', color: C.ink, marginBottom: 6, letterSpacing: 0.5, textTransform: 'uppercase' },
   input: {
-    borderWidth: 1.5,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.creamDeep,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#111827',
+    color: C.ink,
     marginBottom: 16,
-    backgroundColor: '#f9fafb',
+    backgroundColor: C.cream,
   },
   btn: {
-    backgroundColor: '#FF0000',
-    borderRadius: 10,
+    backgroundColor: C.navy,
+    borderWidth: 1.5,
+    borderColor: C.gold,
+    borderRadius: 0,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 4,
   },
   btnDisabled: { opacity: 0.6 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  btnText: { color: C.gold, fontSize: 16, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' },
   linkRow: { marginTop: 16, alignItems: 'center' },
-  linkText: { color: '#6b7280', fontSize: 14 },
-  link: { color: '#FF0000', fontWeight: '600' },
+  linkText: { color: C.inkLight, fontSize: 14 },
+  link: { color: C.red, fontWeight: '700' },
 });

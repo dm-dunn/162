@@ -7,6 +7,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useLeagues } from '../hooks/useLeagues';
 import api from '../services/api';
 import { USE_MOCK_DATA, mockStats } from '../utils/mockData';
+import { formatPoints } from '../utils/formatters';
 
 // Color options — must match RegisterScreen exactly
 const COLOR_OPTIONS = [
@@ -168,7 +169,7 @@ export default function ProfileScreen() {
       {stats && (
         <View style={styles.statsBar}>
           <View style={styles.statCell}>
-            <Text style={styles.statValue}>{stats.total_points}</Text>
+            <Text style={styles.statValue}>{formatPoints(stats.total_points)}</Text>
             <Text style={styles.statLabel}>Points</Text>
           </View>
           <View style={styles.statDivider} />
@@ -245,7 +246,7 @@ export default function ProfileScreen() {
                             <Text style={styles.youTag}>YOU</Text>
                           )}
                         </View>
-                        <Text style={styles.standingsBarPoints}>{entry.total_points}</Text>
+                        <Text style={styles.standingsBarPoints}>{formatPoints(entry.total_points)}</Text>
                       </View>
                     </View>
 

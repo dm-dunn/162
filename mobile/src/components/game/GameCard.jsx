@@ -81,7 +81,75 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
   };
 
   const hasPick = !!existingPick;
-  const pickResult = existingPick?.result ?? null; // 'win' | 'loss' | null
+  const pickResult = existingPick?.result ?? null; // 'win' | 'loss' | null (legacy)
+  const pickOutcome = existingPick?.outcome ?? null; // 'MW', 'ML', 'SFW', 'SFL', 'SDW', 'SDL', 'SP'
+  const pointsEarned = existingPick?.points_earned; // NUMERIC or null if not graded
+
+  // Build result badge text from outcome and points_earned
+  const getResultBadgeText = () => {
+    if (pointsEarned === null || pointsEarned === undefined) {
+      return null; // Not yet graded
+    }
+    // Don't show any badge until grading has actually run (outcome or legacy result required)
+    if (!pickOutcome && !pickResult) return null;
+
+    let icon = '';
+    let label = '';
+
+    // Determine icon and label based on outcome
+    switch (pickOutcome) {
+      case 'MW': // Moneyline Win
+        icon = '✓';
+        label = 'WIN';
+        break;
+      case 'ML': // Moneyline Loss
+        icon = '✗';
+        label = 'LOSS';
+        break;
+      case 'SFW': // Spread Favorite Win
+        icon = '✓';
+        label = 'WIN';
+        break;
+      case 'SFL': // Spread Favorite Loss
+        icon = '✗';
+        label = 'LOSS';
+        break;
+      case 'SDW': // Spread Dog Win
+        icon = '✓';
+        label = 'WIN';
+        break;
+      case 'SDL': // Spread Dog Loss
+        icon = '✗';
+        label = 'LOSS';
+        break;
+      case 'SP': // Spread Push
+        icon = '↔';
+        label = 'PUSH';
+        break;
+      default:
+        // Fallback to legacy result field if outcome is not set
+        if (pickResult === 'win') {
+          icon = '✓';
+          label = 'WIN';
+        } else if (pickResult === 'loss') {
+          icon = '✗';
+          label = 'LOSS';
+        }
+        break;
+    }
+
+    // Format points string
+    let pointsStr = '';
+    if (pointsEarned === 0 || pointsEarned === 0.0) {
+      pointsStr = ' 0 pts';
+    } else if (pointsEarned > 0) {
+      pointsStr = ` +${pointsEarned} ${pointsEarned === 1 ? 'pt' : 'pts'}`;
+    } else {
+      pointsStr = ` ${pointsEarned} ${pointsEarned === -1 ? 'pt' : 'pts'}`;
+    }
+
+    return `${icon} ${label}${pointsStr}`;
+  };
 
   const renderTeamSection = (side) => {
     const abbr = side === 'away' ? game.away_team_abbr : game.home_team_abbr;
@@ -327,10 +395,10 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
       ) : null}
 
       {/* Result badge (if graded) */}
-      {pickResult && (
-        <View style={[styles.resultBadge, pickResult === 'win' ? styles.resultWin : styles.resultLoss]}>
+      {getResultBadgeText() && (
+        <View style={[styles.resultBadge, (pickOutcome === 'SP' || pointsEarned === 0) ? styles.resultPush : pickOutcome?.startsWith('SF') || pickOutcome === 'MW' || pickOutcome === 'SDW' ? styles.resultWin : styles.resultLoss]}>
           <Text style={styles.resultText}>
-            {pickResult === 'win' ? '✓ WIN +2 pts' : '✗ LOSS –1 pt'}
+            {getResultBadgeText()}
           </Text>
         </View>
       )}
@@ -466,6 +534,9 @@ const styles = StyleSheet.create({
   },
   resultLoss: {
     backgroundColor: C.red,
+  },
+  resultPush: {
+    backgroundColor: C.gold,
   },
   resultText: {
     color: C.white,

@@ -5,15 +5,35 @@ import {
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
+// Color palette matching DashboardScreen design system
+const C = {
+  cream: '#F4E9D0',
+  creamDark: '#E8D9B8',
+  creamDeep: '#D4C098',
+  parchment: '#F9F3E3',
+  red: '#C41E3A',
+  redDark: '#9E1730',
+  navy: '#0D1B4F',
+  navyMid: '#1A2F6E',
+  gold: '#C4912A',
+  goldLight: '#E8B84B',
+  brown: '#3D2112',
+  ink: '#1A0F08',
+  inkMid: '#4A3728',
+  inkLight: '#7A6050',
+  green: '#2E6B3E',
+  white: '#FFFFFF',
+};
+
 const COLOR_OPTIONS = [
-  { name: 'Navy Blue', value: '#1e40af' },
-  { name: 'Red', value: '#dc2626' },
-  { name: 'Green', value: '#059669' },
-  { name: 'Purple', value: '#7c3aed' },
-  { name: 'Orange', value: '#ea580c' },
-  { name: 'Pink', value: '#db2777' },
-  { name: 'Teal', value: '#0d9488' },
-  { name: 'Amber', value: '#d97706' }
+  { name: 'Navy', value: C.navy },
+  { name: 'Red', value: C.red },
+  { name: 'Green', value: C.green },
+  { name: 'Gold', value: C.gold },
+  { name: 'Brown', value: C.brown },
+  { name: 'Ink', value: C.ink },
+  { name: 'Cream', value: C.cream },
+  { name: 'Parchment', value: C.parchment }
 ];
 
 export default function RegisterScreen({ navigation }) {
@@ -21,7 +41,7 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [color, setColor] = useState('#1e40af');
+  const [color, setColor] = useState(C.navy);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -184,37 +204,39 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000080' },
+  container: { flex: 1, backgroundColor: C.parchment },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   header: { alignItems: 'center', marginBottom: 24 },
-  logo: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: 1 },
-  logoRed: { color: '#FF0000' },
+  logo: { fontSize: 32, fontWeight: '900', fontStyle: 'italic', color: C.navy, letterSpacing: -0.5 },
+  logoRed: { color: C.red },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: C.parchment,
+    borderWidth: 1,
+    borderColor: C.creamDeep,
+    borderRadius: 0,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowColor: C.creamDeep,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#000080', marginBottom: 12, textAlign: 'center' },
+  title: { fontSize: 22, fontWeight: '900', fontStyle: 'italic', color: C.navy, marginBottom: 12, textAlign: 'center', letterSpacing: -0.5 },
   emailIcon: { fontSize: 48, textAlign: 'center', marginBottom: 16 },
-  successText: { color: '#4b5563', textAlign: 'center', fontSize: 15 },
-  errorBox: { backgroundColor: '#fef2f2', borderColor: '#fca5a5', borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 16 },
+  successText: { color: C.ink, textAlign: 'center', fontSize: 15 },
+  errorBox: { backgroundColor: '#fef2f2', borderColor: '#fca5a5', borderWidth: 1, borderRadius: 0, padding: 12, marginBottom: 16 },
   errorText: { color: '#dc2626', fontSize: 14 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: '700', color: C.ink, marginBottom: 6, letterSpacing: 0.5, textTransform: 'uppercase' },
   input: {
-    borderWidth: 1.5,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.creamDeep,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: '#111827',
+    color: C.ink,
     marginBottom: 16,
-    backgroundColor: '#f9fafb',
+    backgroundColor: C.cream,
   },
   colorGrid: {
     flexDirection: 'row',
@@ -225,28 +247,30 @@ const styles = StyleSheet.create({
   colorSwatch: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 0,
     borderWidth: 2,
     borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
   colorSwatchSelected: {
-    borderColor: '#000080',
+    borderColor: C.navy,
     borderWidth: 2.5,
   },
-  colorCheck: { color: '#fff', fontSize: 18, fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
-  colorHint: { color: '#6b7280', fontSize: 12, marginBottom: 16 },
+  colorCheck: { color: C.white, fontSize: 18, fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
+  colorHint: { color: C.inkLight, fontSize: 12, marginBottom: 16 },
   btn: {
-    backgroundColor: '#FF0000',
-    borderRadius: 10,
+    backgroundColor: C.navy,
+    borderWidth: 1.5,
+    borderColor: C.gold,
+    borderRadius: 0,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 4,
   },
   btnDisabled: { opacity: 0.6 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  btnText: { color: C.gold, fontSize: 16, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' },
   linkRow: { marginTop: 16, alignItems: 'center' },
-  linkText: { color: '#6b7280', fontSize: 14 },
-  link: { color: '#FF0000', fontWeight: '600' },
+  linkText: { color: C.inkLight, fontSize: 14 },
+  link: { color: C.red, fontWeight: '700' },
 });

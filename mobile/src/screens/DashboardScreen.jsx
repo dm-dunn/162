@@ -13,6 +13,7 @@ import { useLeagueLeaderboards } from '../hooks/useLeagueLeaderboards';
 import GameCard from '../components/game/GameCard';
 import api from '../services/api';
 import { mockGames, mockPicks, USE_MOCK_DATA } from '../utils/mockData';
+import { formatPoints } from '../utils/formatters';
 
 // Warm grayscale for other users' indicator bars — fits the parchment palette
 const OTHERS_BAR_COLOR = '#9A8878';
@@ -185,7 +186,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.statsDivider} />
           <View style={styles.statsBannerItem}>
             <Text style={styles.statsBannerNum}>
-              {userStats ? userStats.total_points : '--'}
+              {userStats ? formatPoints(userStats.total_points) : '--'}
             </Text>
             <Text style={styles.statsBannerLabel}>POINTS</Text>
           </View>
@@ -234,7 +235,7 @@ export default function DashboardScreen({ navigation }) {
                     <View key={idx} style={[styles.standingsRow, isUserRow && styles.standingsRowUser]}>
                       <View style={[styles.standingsBar, { backgroundColor: barColor }]} />
                       <Text style={styles.standingsUsername}>{row.username}</Text>
-                      <Text style={styles.standingsPoints}>{row.total_points}</Text>
+                      <Text style={styles.standingsPoints}>{formatPoints(row.total_points)}</Text>
                     </View>
                   );
                 })}
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
   statsBannerTop: {
     height: 1,
     backgroundColor: C.gold,
-    marginBottom: 0,
+    marginBottom: 10,
   },
   statsBannerRow: {
     flexDirection: 'row',

@@ -42,18 +42,32 @@ router.post('/submit-all', authenticate, requireEmailVerified, validate(schemas.
     try {
         const { picks } = req.body;
         const results = [];
+        const skipped = [];
 
         for (const pickData of picks) {
-            const pick = await Pick.create({
-                userId: req.user.id,
-                gameId: pickData.gameId,
-                pickType: pickData.pickType,
-                pickedTeam: pickData.pickedTeam
-            });
-            results.push(pick);
+            try {
+                const pick = await Pick.create({
+                    userId: req.user.id,
+                    gameId: pickData.gameId,
+                    pickType: pickData.pickType,
+                    pickedTeam: pickData.pickedTeam
+                });
+                results.push(pick);
+            } catch (pickError) {
+                // Game is locked or too close to start — skip it, don't fail the whole batch
+                const isLockError = pickError.message === 'Game is locked' ||
+                    pickError.message === 'Too close to game time' ||
+                    pickError.message === 'Game not found';
+
+                if (isLockError) {
+                    skipped.push({ gameId: pickData.gameId, reason: pickError.message });
+                } else {
+                    throw pickError; // Unexpected error — bubble up normally
+                }
+            }
         }
 
-        res.status(201).json({ picks: results, submitted: true });
+        res.status(201).json({ picks: results, skipped, submitted: true });
     } catch (error) {
         next(error);
     }
