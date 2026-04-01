@@ -23,8 +23,9 @@
       "autoIncrement": true,
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.mlb162.app/api",
-        "EXPO_PUBLIC_USE_MOCK": "false"
+        "EXPO_PUBLIC_API_URL": "https://onesixtytwo.dev/api",
+        "EXPO_PUBLIC_USE_MOCK": "false",
+        "NPM_CONFIG_UNSAFE_PERM": "true"
       }
     }
   },
