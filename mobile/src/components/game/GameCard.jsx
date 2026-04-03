@@ -30,7 +30,12 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
   const [injuriesExpanded, setInjuriesExpanded] = useState(false);
 
   const gameTime = new Date(game.game_time);
+  // picks_open is false when odds haven't been fetched yet (home_moneyline is null).
+  // Treat as open if the field is absent (older API response / mock data).
+  const oddsReady = game.picks_open !== false;
   const isLocked = game.data_locked || submitted;
+  // Pre-open: odds not yet loaded AND game hasn't started yet
+  const isPreOpen = !oddsReady && !isLocked;
 
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', {
@@ -50,7 +55,7 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
   };
 
   const handlePickClick = async (pickedTeam, pickType) => {
-    if (isLocked || loading) return;
+    if (isLocked || isPreOpen || loading) return;
 
     setLoading(true);
     setError('');
@@ -180,38 +185,38 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
         {/* ML Button */}
         <TouchableOpacity
           onPress={() => handlePickClick(side, 'moneyline')}
-          disabled={isLocked || loading}
+          disabled={isLocked || isPreOpen || loading}
           activeOpacity={0.75}
           style={[
             styles.pickBtn,
             mlPicked
               ? { backgroundColor: pickedBgColor, borderColor: pickedBgColor }
               : { backgroundColor: C.white, borderColor: teamColor },
-            isLocked && styles.pickBtnLocked,
+            (isLocked || isPreOpen) && styles.pickBtnLocked,
           ]}
         >
           <Text style={styles.pickBtnLabel}>ML</Text>
           <Text style={[styles.pickBtnValue, { color: mlPicked ? C.white : teamColor }]}>
-            {mlPicked && pickResult ? (pickResult === 'win' ? '✓' : '✗') : abbr.slice(0, 2)}
+            {isPreOpen ? '—' : mlPicked && pickResult ? (pickResult === 'win' ? '✓' : '✗') : abbr.slice(0, 2)}
           </Text>
         </TouchableOpacity>
 
         {/* Spread Button */}
         <TouchableOpacity
           onPress={() => handlePickClick(side, 'spread')}
-          disabled={isLocked || loading}
+          disabled={isLocked || isPreOpen || loading}
           activeOpacity={0.75}
           style={[
             styles.pickBtn,
             sprPicked
               ? { backgroundColor: pickedBgColor, borderColor: pickedBgColor }
               : { backgroundColor: C.white, borderColor: teamColor },
-            isLocked && styles.pickBtnLocked,
+            (isLocked || isPreOpen) && styles.pickBtnLocked,
           ]}
         >
           <Text style={styles.pickBtnLabel}>SPR</Text>
           <Text style={[styles.pickBtnValue, { color: sprPicked ? C.white : teamColor }]}>
-            {sprPicked && pickResult ? (pickResult === 'win' ? '✓' : '✗') : getSpreadDisplay(side) || '—'}
+            {isPreOpen ? '—' : sprPicked && pickResult ? (pickResult === 'win' ? '✓' : '✗') : getSpreadDisplay(side) || '—'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -382,10 +387,11 @@ export default function GameCard({ game, existingPick, onPickMade, submitted }) 
       {/* Time row */}
       <View style={styles.timeRow}>
         <Text style={styles.gameTime}>{formatTime(gameTime)}</Text>
+        {isPreOpen && <Text style={styles.preOpenBadge}>ODDS PENDING</Text>}
         {isLocked && !pickResult && <Text style={styles.lockBadge}>🔒 LOCKED</Text>}
         {pickResult === 'win'  && <Text style={styles.winBadge}>✓ WIN</Text>}
         {pickResult === 'loss' && <Text style={styles.loseBadge}>✗ LOSS</Text>}
-        {hasPick && !pickResult && !isLocked && <Text style={styles.pickedBadge}>PICKED</Text>}
+        {hasPick && !pickResult && !isLocked && !isPreOpen && <Text style={styles.pickedBadge}>PICKED</Text>}
       </View>
 
       {error ? (
@@ -478,6 +484,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.5,
     textTransform: 'uppercase',
+  },
+  preOpenBadge: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: C.gold,
+    backgroundColor: C.navy,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 2,
+    letterSpacing: 1,
   },
   lockBadge: {
     fontSize: 8,

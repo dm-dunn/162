@@ -13,7 +13,16 @@ export function useGames(date) {
   const fetchGames = async () => {
     try {
       setLoading(true);
-      const endpoint = date ? `/games/date/${date}` : '/games/today';
+      let endpoint;
+      if (date) {
+        endpoint = `/games/date/${date}`;
+      } else {
+        // Pass the device's local date so the server never uses UTC midnight
+        // to determine "today" — avoids showing tomorrow's games in evening hours.
+        const d = new Date();
+        const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        endpoint = `/games/today?date=${localDate}`;
+      }
       const response = await api.get(endpoint);
       setGames(response.data.games);
       setError(null);

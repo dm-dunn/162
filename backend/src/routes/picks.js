@@ -7,7 +7,12 @@ const router = express.Router();
 
 router.get('/today', authenticate, async (req, res, next) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
+        // Prefer the client-supplied local date (YYYY-MM-DD) so users in
+        // time zones behind UTC don't get tomorrow's picks after UTC midnight.
+        const clientDate = req.query.date;
+        const today = (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate))
+            ? clientDate
+            : new Date().toISOString().split('T')[0];
         const picks = await Pick.findByUserAndDate(req.user.id, today);
         res.json({ picks });
     } catch (error) {

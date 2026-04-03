@@ -13,7 +13,16 @@ export function usePicks(date) {
   const fetchPicks = async () => {
     try {
       setLoading(true);
-      const endpoint = date ? `/picks/date/${date}` : '/picks/today';
+      let endpoint;
+      if (date) {
+        endpoint = `/picks/date/${date}`;
+      } else {
+        // Pass the device's local date so the server never uses UTC midnight
+        // to determine "today" — avoids showing tomorrow's picks in evening hours.
+        const d = new Date();
+        const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        endpoint = `/picks/today?date=${localDate}`;
+      }
       const response = await api.get(endpoint);
       setPicks(response.data.picks);
       setError(null);
