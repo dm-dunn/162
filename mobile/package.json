@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "eas-build-pre-install": "sudo chown -R $(id -un):$(id -gn) .. 2>/dev/null || true && chmod -R u+w .. 2>/dev/null || true && chmod -R u+w . 2>/dev/null || true && echo 'EAS pre-install: permissions fixed'"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

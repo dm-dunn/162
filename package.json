@@ -3,5 +3,8 @@
   "private": true,
   "workspaces": [
     "mobile"
-  ]
+  ],
+  "scripts": {
+    "eas-build-pre-install": "sudo chown -R $(id -un):$(id -gn) . 2>/dev/null || true && chmod -R u+w . 2>/dev/null || true && echo 'EAS pre-install (root): permissions fixed'"
+  }
 }
